@@ -8,7 +8,7 @@ The first version includes a portable TypeScript core, D1/SQLite storage, three 
 
 ## Develop
 
-Node 22.23.2 or later within Node 22, Python 3.10+, Git and ShellCheck 0.10+. `npm ci`, `npm run verify`, `npm run build`. `npm start` runs the built Worker locally on loopback. Apply `drizzle/0000_new_ben_urich.sql` to local D1 first; see [verification](docs/verification.md). Enable `REPORTING_ENABLED=true` only in a local environment or an explicitly authorized hosted test. Without it, observation operations return `unavailable`.
+Node 22.23.2 or later within Node 22, Python 3.10+, Git and ShellCheck 0.9+. `npm ci`, `npm run verify`, `npm run build`. `npm start` runs the built Worker locally on loopback. Apply `drizzle/0000_new_ben_urich.sql` to local D1 first; see [verification](docs/verification.md). Enable `REPORTING_ENABLED=true` only in a local environment or an explicitly authorized hosted test. Without it, observation operations return `unavailable`.
 
 - [Final plan and launch boundary](docs/plan.md)
 - [API and count semantics](docs/api.md)

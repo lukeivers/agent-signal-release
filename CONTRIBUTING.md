@@ -4,7 +4,7 @@ Agent Signal is an early, single-maintainer experiment. Luke Ivers maintains it;
 
 ## Set up and verify
 
-Use Node 22.23.2 or later within Node 22, Python 3.10 or later, Git, and ShellCheck 0.10 or later. On macOS, install ShellCheck with `brew install shellcheck`; on Debian/Ubuntu use `sudo apt-get install shellcheck`. No global DevKit installation is needed.
+Use Node 22.23.2 or later within Node 22, Python 3.10 or later, Git, and ShellCheck 0.9 or later. On macOS, install ShellCheck with `brew install shellcheck`; on Debian/Ubuntu use `sudo apt-get install shellcheck`. No global DevKit installation is needed.
 
 ```sh
 npm ci
