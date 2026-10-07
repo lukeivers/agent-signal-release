@@ -3,13 +3,10 @@ import assert from 'node:assert/strict';
 import { Store } from '../core/store.ts';
 import { identity, cohort, WINDOW_MS, CAPABILITY_MS } from '../core/contract.ts';
 import { handle } from '../core/http.ts';
-import { Sqlite, now, sample, token } from './support.ts';
+import { Sqlite, now, sample, token, reportFixture } from './support.ts';
 
 test('same reporter retries, exact cohort isolation, recovery and ordering', async () => {
-  const db = new Sqlite(),
-    store = new Store(db),
-    a = await identity(token(), now),
-    b = await identity(token('b'), now);
+  const { db, store, a, b } = await reportFixture();
   const send = (sequence: number, state: 'failure' | 'recovery', time = now) =>
     store.report({ cohort: sample, sequence, state }, a, time);
   assert.equal((await send(1, 'failure')).outstanding, 1);
@@ -46,10 +43,7 @@ test('expiry differs from recovery; watermarks retained until capability expiry 
   await assert.rejects(identity(token(), now + CAPABILITY_MS), /invalid_capability/);
 });
 test('bearer ownership and atomic quota ceilings', async () => {
-  const db = new Sqlite(),
-    store = new Store(db),
-    a = await identity(token(), now),
-    b = await identity(token('b'), now);
+  const { db, store, a, b } = await reportFixture();
   await store.report({ cohort: sample, sequence: 1, state: 'failure' }, a, now);
   await store.report({ cohort: sample, sequence: 1, state: 'recovery' }, b, now);
   assert.equal((await store.check(sample, now)).outstanding, 1);
@@ -125,7 +119,8 @@ test('privacy projection, bounds, generic errors, disabled default and MCP aggre
     env,
     now,
   );
-  assert.equal((await rpc.json()).result.structuredContent.outstanding, 1);
+  const rpcBody = (await rpc.json()) as { result: { structuredContent: { outstanding: number } } };
+  assert.equal(rpcBody.result.structuredContent.outstanding, 1);
   const broken = {
     prepare() {
       throw new Error(secret);
@@ -182,7 +177,7 @@ test('MCP rejects malformed mutations and origins; transport and tool errors are
     env,
     now,
   );
-  const error = await invalid.json();
+  const error = (await invalid.json()) as { result: { isError: boolean } };
   assert.equal(invalid.status, 200);
   assert.equal(error.result.isError, true);
 });

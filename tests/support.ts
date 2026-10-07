@@ -1,6 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
-import type { Database, Statement } from '../core/store.ts';
+import { Store, type Database, type Statement } from '../core/store.ts';
+import { identity } from '../core/contract.ts';
 export class Sqlite implements Database {
   raw = new DatabaseSync(':memory:');
   constructor() {
@@ -45,3 +46,13 @@ export const sample = {
 } as const;
 export const token = (character = 'a', at = now) =>
   `v1.${Math.floor(at / 3_600_000)}.${character.repeat(43)}`;
+
+export async function reportFixture() {
+  const db = new Sqlite();
+  return {
+    db,
+    store: new Store(db),
+    a: await identity(token(), now),
+    b: await identity(token('b'), now),
+  };
+}

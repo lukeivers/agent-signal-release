@@ -1,0 +1,25 @@
+name: Bug report
+description: Report a reproducible problem using synthetic or sanitized details.
+title: '[Bug]: '
+body:
+  - type: markdown
+    attributes:
+      value: 'For vulnerabilities use SECURITY.md. Do not include private logs, tool output, commands, headers, bearer capabilities, repository names, or state files.'
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and observed behavior
+      description: Explain the outcome without identifying users or repositories.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal synthetic reproduction
+      description: Use fabricated inputs; give the error category rather than raw diagnostics.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Commit or version, OS and Node version

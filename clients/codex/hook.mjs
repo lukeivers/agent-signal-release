@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import { observe, readBounded } from './adapter.mjs';
+import { observe, readBoundedToolOutput } from './adapter.mjs';
 try {
-  const event = JSON.parse(await readBounded(process.stdin, 1_000_000));
+  const event = JSON.parse(await readBoundedToolOutput(process.stdin, 1_000_000));
   const counts = await observe(event);
   if (counts)
     process.stdout.write(

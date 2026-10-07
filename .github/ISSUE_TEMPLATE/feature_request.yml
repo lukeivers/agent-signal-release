@@ -1,0 +1,15 @@
+name: Suggest an improvement
+description: Describe a useful outcome and its privacy implications.
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: What would this help you do?
+      description: Use a synthetic example. Do not include private tool output or identifiers.
+    validations:
+      required: true
+  - type: textarea
+    id: privacy
+    attributes:
+      label: Data and maintenance implications
+      description: What would need to be collected, stored or maintained?

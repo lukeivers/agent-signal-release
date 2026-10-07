@@ -4,6 +4,8 @@
 
 Current authorization covers private GitHub source/CI and owner-private Sites registration, source push, and saved version only. No deployments, public repository, public service, social posts, outreach, directory submission, or automatic marketing are authorized. Private deployment also requires the next authorization.
 
+Before public source publication, complete [open-source release preparation](open-source-readiness.md). This does not replace the hosted gates below.
+
 ## Gates for a separately authorized hosted pilot
 
 - Confirm Sites can expose these routes and MCP tools to the intended users, with the platform's upstream private/OAuth access enforced. Test an actual tool call; locally listing tools is insufficient. Verify how reporting credentials coexist with platform authorization.
