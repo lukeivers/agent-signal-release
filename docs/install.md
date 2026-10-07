@@ -2,7 +2,21 @@
 
 No public endpoint is live. Do not install this hook globally during preparation. For a later authorized pilot, inspect `clients/codex/adapter.mjs` and `hook.mjs`, understand `privacy.md`, and explicitly enable reporting.
 
-Copy `clients/codex/hooks.example.json` to a trusted project's `.codex/hooks.json`, replacing `/ABSOLUTE/PATH` with the reviewed checkout path. Preserve existing hook entries rather than overwriting them. Set `AGENT_SIGNAL_ENDPOINT` to the verified stable Cloudflare `workers.dev` HTTPS origin (no path, query, credentials, or fragment). Optionally set `AGENT_SIGNAL_STATE_DIR` to an absolute private directory; default is `~/.local/state/agent-signal`. Open `/hooks` in Codex and review/trust the exact command definition. Trust changes whenever the definition changes. Installing the skill does not trust or enable the hook.
+After launch approval, use Node.js 22.13 or newer and Git on macOS/Linux. This pilot is a project-scoped Codex command hook; other agents need an explicit integration. The following prepared installation path becomes usable once the owner publishes the release tag and activates the pilot API. Service availability remains best effort:
+
+```sh
+git clone https://github.com/lukeivers/agent-signal-release.git
+cd agent-signal-release
+git checkout v0.1.0-pilot.1
+npm ci --prefix clients/codex --ignore-scripts
+node scripts/install-codex-hook.mjs /ABSOLUTE/PATH/TO/YOUR/PROJECT
+```
+
+Review the pinned source and [privacy notice](privacy.md) before installation. Keep this checkout in place: the hook references its absolute path and your current Node binary. The hook-only install uses four locked dependencies; it does not install the website/build toolchain or run dependency lifecycle scripts. No account, GitHub credential, or payment is needed.
+
+The installer targets `.codex/hooks.json` inside the existing project, preserves other entries, backs up an existing file as `hooks.json.agent-signal-backup`, refuses symlinked hook files/directories, and does not add a duplicate. It does not trust the hook. Open `/hooks` in that project's Codex session, review the exact command, and explicitly trust it to enable reporting. If your Codex build does not show the hook, stop and report the installation problem rather than assuming it is active. Changes to the command require fresh trust. Installing a skill alone does not enable observation.
+
+The installer uses `https://agent-signal-701c00ab.agent-signal-701c00ab.workers.dev`. An optional second argument selects another reviewed root HTTPS origin. Optionally set `AGENT_SIGNAL_STATE_DIR` to an absolute private directory; the default is `~/.local/state/agent-signal`.
 
 The hook matches `Bash` PostToolUse. Dry-run flags are excluded. Initial classifier recognizes a plain `git push` command and output with a GitHub HTTPS URL plus the exact Git server error phrase for 502/503/504. It skips ambiguous or unrelated commands, permission errors, SSH pushes, connectors, and ambiguous output. When the client supplies plain output without exit metadata, the fatal Git URL/server-error message establishes failure; recovery additionally requires a clean successful commit-range ref-update line. With exit metadata, recovery requires exit 0 and a corresponding `To https://github.com/...` line. Up-to-date output without a destination cannot close a report; it ages out. This deliberately narrow coverage avoids falsely reporting user-level errors.
 

@@ -59,11 +59,11 @@ test('live verification rejects stale or unavailable deployments without writing
     'synthetic-secret',
     async (input, init) => {
       attempts++;
-      return attempts === 1 ? new Response(null, { status: 503 }) : send(input, init);
+      return attempts === 2 ? new Response(null, { status: 503 }) : send(input, init);
     },
-    2,
+    5,
   );
-  assert.equal(attempts, 2);
+  assert.equal(attempts, 5);
   await assert.rejects(
     verifyDeployment(
       endpoint,

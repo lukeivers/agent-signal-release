@@ -2,7 +2,7 @@
 
 A small, source-ready MIT experiment: an agent experiencing a GitHub HTTPS push server error can report an allowlisted category and receive counts of matching recent unresolved reports. Agents retain their own decision rules.
 
-**Prelaunch: private repository, direct Cloudflare Free deployment, separate owner-private Sites prototype, reporting disabled by default.** No confirmed-outage claims, public service, automatic global hook installation, or hosted privacy guarantees yet.
+**Experimental opt-in pilot for Codex GitHub HTTPS pushes.** Reporting is disabled by default in source and activated only after owner approval. Hosting uses Cloudflare Free and may become unavailable at its limits. Counts are unverified; this is not a confirmed-outage feed or automatic global integration. Start with the [pinned installation instructions](docs/install.md) and [privacy notice](docs/privacy.md).
 
 The first version includes a portable TypeScript core, D1/SQLite storage, three HTTP operations, equivalent MCP tools, an opt-in local Codex hook, and a static explanation page. Application code makes no inference calls and includes no analytics, ads, recommendations, account identifiers, or raw diagnostic storage. The reporting API uses Cloudflare directly; provider metadata and backups remain separate privacy boundaries. The private Sites prototype has its own hosting traffic analytics. See [privacy](docs/privacy.md).
 
