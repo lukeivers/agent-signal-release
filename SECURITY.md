@@ -1,0 +1,7 @@
+# Security
+
+This is a prelaunch experiment. Anonymous report counts can be forged. Do not base destructive actions or confirmed-outage announcements solely on them.
+
+Before the repository becomes public, enable GitHub private vulnerability reporting and verify its availability. Report privacy/security concerns through that channel; never include credentials or private tool output in a public issue. While private, notify the repository owner through an existing private channel.
+
+Only the current source is supported. The service defaults to ingestion disabled. Public deployment requires the gates in `docs/launch.md`. No authority or execution recommendations are returned by the observation service.

@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict';
+import { randomBytes } from 'node:crypto';
+const origin = process.argv[2] ?? 'http://127.0.0.1:8799';
+if (!/^http:\/\/127\.0\.0\.1:\d+$/.test(origin)) throw new Error('Local smoke requires loopback');
+const capability = () => `v1.${Math.floor(Date.now() / 3_600_000)}.${randomBytes(32).toString('base64url')}`;
+const cohort = { service: 'github', operation: 'git_push', access: 'git_https', environment: 'hosted_agent', error: 'http_504' };
+const request = async (action, token, sequence) => {
+  const reply = await fetch(`${origin}/api/v1/${action}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ cohort, sequence, diagnostic: 'synthetic@example.test/private' }) });
+  return { status: reply.status, value: await reply.json() };
+};
+const a = capability();
+assert.equal((await request('failure', a, 1)).status, 200);
+const many = await Promise.all(Array.from({ length: 20 }, (_, index) => request('failure', a, index + 2)));
+assert.equal(many.filter(x => [200, 409].includes(x.status)).length, 11);
+assert.equal(many.filter(x => x.status === 429).length, 9);
+const check = await request('check', a);
+assert.equal(check.value.outstanding, 1);
+const others = await Promise.all(Array.from({ length: 5 }, () => request('failure', capability(), 1)));
+assert(others.every(x => x.status === 200));
+assert.equal((await request('check', a)).value.outstanding, 6);
+const b = capability(); await request('failure', b, 1);
+assert.equal((await request('recovery', b, 2)).value.recovered, 1);
+assert.equal((await request('failure', b, 1)).status, 409);
+console.log(JSON.stringify({ localBuiltWorker: true, d1ConcurrentQuota: true, duplicateCount: true, recoveryAndReplay: true }));

@@ -1,0 +1,17 @@
+{
+  "description": "Opt-in Agent Signal reporting. Review the code and privacy limits before trusting this hook.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /ABSOLUTE/PATH/agent-signal/clients/codex/hook.mjs",
+            "timeout": 3
+          }
+        ]
+      }
+    ]
+  }
+}
