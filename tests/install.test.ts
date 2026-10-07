@@ -70,6 +70,7 @@ test('pilot switches preserve hosting identifiers, start a fresh count window an
   assert.equal(opened.vars.STATE_EPOCH, 'fresh');
   assert.equal(pilotConfig(opened, true, 'retry').vars.STATE_EPOCH, 'fresh');
   assert.equal(pilotConfig(opened, false).vars.REPORTING_ENABLED, 'false');
+  assert.equal(pilotConfig(previous, false).vars.PUBLIC_ENABLED, 'false');
   assert.throws(
     () => pilotConfig({ ...previous, vars: { ...previous.vars, BACKEND_MODE: 'sites' } }, true),
     /direct/,

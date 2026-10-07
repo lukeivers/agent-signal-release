@@ -74,7 +74,7 @@ export function pilotConfig(previous, enabled, now = new Date().toISOString()) {
     ...previous,
     vars: {
       ...previous.vars,
-      PUBLIC_ENABLED: 'true',
+      PUBLIC_ENABLED: enabled ? 'true' : previous.vars.PUBLIC_ENABLED,
       REPORTING_ENABLED: String(enabled),
       STATE_EPOCH:
         enabled && previous.vars.REPORTING_ENABLED !== 'true' ? now : previous.vars.STATE_EPOCH,
@@ -179,6 +179,8 @@ async function main() {
   if (command === 'pilot-open' || command === 'pilot-stop') {
     if (command === 'pilot-open' && args[0] !== '--approved')
       throw new Error('Opening public reporting requires explicit launch approval and --approved');
+    if (command === 'pilot-stop' && previous.vars.PUBLIC_ENABLED !== 'true')
+      throw new Error('Configuration is already private; inspect live state before changing it');
     const next = pilotConfig(previous, command === 'pilot-open');
     const endpoint = JSON.parse(readFileSync(resolve(directory, 'endpoint.json'), 'utf8')).url;
     deployCandidate(next);
