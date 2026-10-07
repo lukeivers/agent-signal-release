@@ -2,7 +2,7 @@
 
 No public endpoint is live. Do not install this hook globally during preparation. For a later authorized pilot, inspect `clients/codex/adapter.mjs` and `hook.mjs`, understand `privacy.md`, and explicitly enable reporting.
 
-After launch approval, use Node.js 22.13 or newer and Git on macOS/Linux. This pilot is a project-scoped Codex command hook; other agents need an explicit integration. The release repository and API are currently private/closed. The following commands become usable after publication:
+After launch approval, use Node.js 22.13 or newer and Git on macOS/Linux. This pilot is a project-scoped Codex command hook; other agents need an explicit integration. The following prepared installation path becomes usable once the owner publishes the release tag and activates the pilot API. Service availability remains best effort:
 
 ```sh
 git clone https://github.com/lukeivers/agent-signal-release.git
