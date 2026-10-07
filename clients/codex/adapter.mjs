@@ -156,7 +156,7 @@ export async function observe(event, options = {}) {
           body: JSON.stringify(payload),
         });
         if (!reply.ok) continue;
-        const text = await readBounded(reply, 4096),
+        const text = await readBoundedToolOutput(reply, 4096),
           counts = JSON.parse(text);
         if (
           [counts.outstanding, counts.otherOutstanding, counts.recovered].every(
@@ -185,7 +185,7 @@ export async function observe(event, options = {}) {
     await release();
   }
 }
-export async function readBounded(source, maximum) {
+export async function readBoundedToolOutput(source, maximum) {
   const stream = source.body ?? source;
   const reader = typeof stream.getReader === 'function' ? stream.getReader() : null;
   let total = 0;

@@ -168,6 +168,8 @@ NODE
     fi
     seed_stage="$(mktemp -d "${writable_store}.seed.XXXXXX")" || exit 70
     trap 'if [[ -n "${seed_stage:-}" ]]; then rm -rf -- "${seed_stage}"; fi; report_store || true' EXIT
+    # The child shell expands its own positional arguments.
+    # shellcheck disable=SC2016
     timeout --signal=TERM --kill-after="${SITES_INSTALL_KILL_AFTER:-15s}" \
       "${SITES_PNPM_STORE_PREPARE_TIMEOUT:-60s}" bash -c \
       'cp -a --no-preserve=ownership "$1/." "$2/" && chmod -R u+rwX "$2"' _ "${seed}" "${seed_stage}" || exit 70
@@ -201,8 +203,12 @@ if [[ "${prepare_only}" == 1 ]]; then exit 0; fi
 # A later restricted session selects a private store before its frozen repair.
 configured_store=.sites-runtime/pnpm-store
 if [[ "${store_scope}" == workspace ]]; then
+  # pnpm expands the stored environment expression when reading configuration.
+  # shellcheck disable=SC2016
   configured_store='${SITES_PNPM_SHARED_STORE:-.sites-runtime/pnpm-store}'
 elif [[ "${runtime_root}" != "${SITES_PROJECT_ROOT}/.sites-runtime" ]]; then
+  # Preserve the expression for pnpm rather than this setup shell.
+  # shellcheck disable=SC2016
   configured_store='${SITES_RUNTIME_ROOT:-.sites-runtime}/pnpm-store'
 fi
 "${pnpm_command[@]}" config set package-import-method auto --location project

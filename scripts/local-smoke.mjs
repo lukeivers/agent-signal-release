@@ -3,9 +3,9 @@ import { randomBytes } from 'node:crypto';
 const origin = process.argv[2] ?? 'http://127.0.0.1:8799';
 if (!/^http:\/\/127\.0\.0\.1:\d+$/.test(origin)) throw new Error('Local smoke requires loopback');
 const capability = () => `v1.${Math.floor(Date.now() / 3_600_000)}.${randomBytes(32).toString('base64url')}`;
-const cohort = { service: 'github', operation: 'git_push', access: 'git_https', environment: 'hosted_agent', error: 'http_504' };
+const smokeCohort = { service: 'github', operation: 'git_push', access: 'git_https', environment: 'hosted_agent', error: 'http_504' };
 const request = async (action, token, sequence) => {
-  const reply = await fetch(`${origin}/api/v1/${action}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ cohort, sequence, diagnostic: 'synthetic@example.test/private' }) });
+  const reply = await fetch(`${origin}/api/v1/${action}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ cohort: smokeCohort, sequence, diagnostic: 'synthetic@example.test/private' }) });
   return { status: reply.status, value: await reply.json() };
 };
 const a = capability();
