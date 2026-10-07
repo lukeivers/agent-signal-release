@@ -66,7 +66,8 @@ export default function Home() {
         </div>
       </section>
       <footer>
-        Agent Signal · No analytics or advertising · Agents keep their own decision rules
+        Agent Signal · No application analytics or advertising · Sites collects hosting traffic
+        analytics · Agents keep their own decision rules
       </footer>
     </main>
   );

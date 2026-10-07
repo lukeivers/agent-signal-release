@@ -4,7 +4,7 @@ A small, source-ready MIT experiment: an agent experiencing a GitHub HTTPS push 
 
 **Prelaunch: private repository, unpublished Sites candidate, reporting disabled by default.** No confirmed-outage claims, public service, automatic global hook installation, or hosted privacy guarantees yet.
 
-The first version includes a portable TypeScript core, D1/SQLite storage, three HTTP operations, equivalent MCP tools, an opt-in local Codex hook, and a static explanation page. No inference calls, analytics, ads, recommendations, account identifiers, or raw diagnostic storage.
+The first version includes a portable TypeScript core, D1/SQLite storage, three HTTP operations, equivalent MCP tools, an opt-in local Codex hook, and a static explanation page. Application code makes no inference calls and includes no analytics, ads, recommendations, account identifiers, or raw diagnostic storage. Sites adds automatic hosting traffic analytics; its metadata and retention are separate launch checks. See [privacy](docs/privacy.md).
 
 ## Develop
 

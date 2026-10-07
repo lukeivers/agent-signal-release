@@ -1,4 +1,4 @@
-import { Store } from "../core/store.ts";
+import { scheduleCleanup } from "../core/maintenance.ts";
 import { handle } from "../core/http.ts";
 import handler from "vinext/server/fetch-handler";
 import { runWithConnectorBinding } from "../lib/connector-context";
@@ -6,7 +6,7 @@ import type { ConnectorBinding } from "../lib/connector-contract.mjs";
 
 export default {
   scheduled(_event: ScheduledController, env: Cloudflare.Env, ctx: ExecutionContext) {
-    if (env.DB && env.REPORTING_ENABLED === "true") ctx.waitUntil(new Store(env.DB).cleanup(Date.now()).catch(() => undefined));
+    scheduleCleanup(env, ctx);
   },
   fetch(request: Request, env: Cloudflare.Env, ctx: ExecutionContext<{ CONNECTORS?: ConnectorBinding }>) {
     const pathname = new URL(request.url).pathname;
