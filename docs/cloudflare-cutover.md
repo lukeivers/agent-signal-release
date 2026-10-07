@@ -1,4 +1,14 @@
-# Stable endpoint and prepared Cloudflare cutover
+# Direct Cloudflare hosting and retained migration adapter
+
+## Current launch decision
+
+The owner approved starting the reporting service directly on Cloudflare Workers and D1, staying on Free. The dashboard's Workers plans page confirmed Free as the current plan on 2026-10-07. Public access and reporting remain disabled. The stable address remains unchanged. No domain purchase, paid activation or automatic upgrade is authorized.
+
+Direct mode needs no Sites origin or access credential. The owner-private Sites prototype can remain separate; it is not a reporting dependency. New `prepare` configurations default to `cloudflare` mode. `node scripts/cloudflare.mjs prepare ACCOUNT_ID DATABASE_ID WORKER_NAME` prepares a closed direct deployment, followed by `migrate`, `dry-run`, and guarded deployment verification. Reporter capabilities are never hosting account credentials.
+
+The earlier Sites-to-Cloudflare migration was rehearsed and remains available for existing integrations. The instructions below describe that legacy adapter, not the initial public deployment. Do not reintroduce its Sites access secret for the direct launch.
+
+## Legacy stable endpoint and prepared cutover
 
 The public pilot must advertise one verified Cloudflare `workers.dev` origin from its first release. REST uses `/api/v1/*`; MCP uses `/mcp` at that same origin. No domain purchase is required. Do not advertise the generated Sites MCP connection or Sites API as migration-stable integrations. The existing owner-private Sites plugin is a separate connection and cannot transparently be retargeted by this Worker.
 

@@ -107,6 +107,13 @@ export async function observe(event, options = {}) {
         pending: {},
       };
     }
+    // No background retries. A later matching tool event may retry after cooldown.
+    if (Number.isFinite(state.nextAttempt) && now < state.nextAttempt) return null;
+    const defer = async () => {
+      state.backoffMs = Math.min((state.backoffMs || 500) * 2, 60_000);
+      state.nextAttempt = now + state.backoffMs;
+      await save(state);
+    };
     const destination = createHmac('sha256', state.capability)
       .update(classification.remote)
       .digest('hex');
@@ -155,7 +162,11 @@ export async function observe(event, options = {}) {
           },
           body: JSON.stringify(payload),
         });
-        if (!reply.ok) continue;
+        if (!reply.ok) {
+          await reply.body?.cancel();
+          await defer();
+          break;
+        }
         const text = await readBoundedToolOutput(reply, 4096),
           counts = JSON.parse(text);
         if (
@@ -163,6 +174,9 @@ export async function observe(event, options = {}) {
             (value) => Number.isSafeInteger(value) && value >= 0 && value <= 20000,
           )
         ) {
+          state.backoffMs = 0;
+          state.nextAttempt = 0;
+          await save(state);
           answer = {
             outstanding: counts.outstanding,
             otherOutstanding: counts.otherOutstanding,
@@ -175,9 +189,14 @@ export async function observe(event, options = {}) {
             if (!state.pending[destination].length) delete state.pending[destination];
             await save(state);
           }
+        } else {
+          await defer();
+          break;
         }
       } catch {
         /* Observer failure must never affect the original tool action. */
+        await defer();
+        break;
       }
     }
     return answer;

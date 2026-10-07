@@ -8,7 +8,11 @@ const directory = resolve(root, '.cloudflare');
 const configPath = resolve(directory, 'wrangler.json');
 const wrangler = resolve(root, 'node_modules/wrangler/bin/wrangler.js');
 
-export function deploymentConfig({ account, database, name, origin }, previous, mode = 'sites') {
+export function deploymentConfig(
+  { account, database, name, origin = '' },
+  previous,
+  mode = 'cloudflare',
+) {
   if (
     !/^[a-f0-9]{32}$/.test(account) ||
     !/^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(database) ||
@@ -16,18 +20,21 @@ export function deploymentConfig({ account, database, name, origin }, previous, 
     !['sites', 'cloudflare'].includes(mode)
   )
     throw new Error('Invalid deployment identifiers or mode');
-  const site = new URL(origin);
-  if (
-    site.protocol !== 'https:' ||
-    !site.hostname.endsWith('.chatgpt.site') ||
-    site.port ||
-    site.username ||
-    site.password ||
-    site.pathname !== '/' ||
-    site.search ||
-    site.hash
-  )
-    throw new Error('Expected a root Sites HTTPS origin');
+  let site;
+  if (mode === 'sites') {
+    site = new URL(origin);
+    if (
+      site.protocol !== 'https:' ||
+      !site.hostname.endsWith('.chatgpt.site') ||
+      site.port ||
+      site.username ||
+      site.password ||
+      site.pathname !== '/' ||
+      site.search ||
+      site.hash
+    )
+      throw new Error('Expected a root Sites HTTPS origin');
+  }
   if (
     previous?.vars.BACKEND_MODE === 'cloudflare' &&
     mode === 'sites' &&
@@ -35,6 +42,8 @@ export function deploymentConfig({ account, database, name, origin }, previous, 
   )
     throw new Error('Reverse cutover requires a separately reviewed fresh-window rehearsal');
   const template = JSON.parse(readFileSync(resolve(root, 'wrangler.cloudflare.json'), 'utf8'));
+  const vars = { ...template.vars, ...previous?.vars };
+  delete vars.SITES_ORIGIN;
   return {
     ...template,
     name,
@@ -50,10 +59,9 @@ export function deploymentConfig({ account, database, name, origin }, previous, 
       },
     ],
     vars: {
-      ...template.vars,
-      ...previous?.vars,
+      ...vars,
       BACKEND_MODE: mode,
-      SITES_ORIGIN: site.origin,
+      ...(site ? { SITES_ORIGIN: site.origin } : {}),
       STATE_EPOCH:
         previous?.vars.BACKEND_MODE === mode ? previous.vars.STATE_EPOCH : new Date().toISOString(),
     },

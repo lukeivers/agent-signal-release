@@ -181,3 +181,34 @@ test('MCP rejects malformed mutations and origins; transport and tool errors are
   assert.equal(invalid.status, 200);
   assert.equal(error.result.isError, true);
 });
+
+test('exhausted local budget rejects REST and MCP mutations without changing stored observations', async () => {
+  const { db, store, a } = await reportFixture();
+  try {
+    await store.report({ cohort: sample, sequence: 1, state: 'failure' }, a, now);
+    db.raw.prepare('UPDATE budgets SET used=10000 WHERE key LIKE ?').run('global:%');
+    const before = db.raw.prepare('SELECT * FROM observations').all();
+    const env = { DB: db, REPORTING_ENABLED: 'true' };
+    const rest = await handle(req('/api/v1/recovery', { cohort: sample, sequence: 2 }), env, now);
+    assert.equal(rest.status, 429);
+    assert.deepEqual(await rest.json(), { error: 'rate_limited' });
+    const rpc = await handle(
+      req('/mcp', {
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: {
+          name: 'report_recovery',
+          arguments: { cohort: sample, sequence: 2, capability: token() },
+        },
+      }),
+      env,
+      now,
+    );
+    const body = (await rpc.json()) as { result: { isError: boolean } };
+    assert.equal(body.result.isError, true);
+    assert.deepEqual(db.raw.prepare('SELECT * FROM observations').all(), before);
+  } finally {
+    db.raw.close();
+  }
+});

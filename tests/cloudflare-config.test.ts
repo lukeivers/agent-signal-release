@@ -9,12 +9,15 @@ const identifiers = {
 };
 
 test('deployment preserves the stable name, safety switches and epoch on retries; public reverse cutover is blocked', () => {
-  const first = deploymentConfig(identifiers, undefined);
+  const first = deploymentConfig(identifiers, undefined, 'sites');
   assert.equal(first.vars.PUBLIC_ENABLED, 'false');
   assert.equal(first.vars.REPORTING_ENABLED, 'false');
   assert.equal(first.observability.enabled, false);
   assert.deepEqual(first.triggers.crons, ['*/5 * * * *']);
-  assert.equal(deploymentConfig(identifiers, first).vars.STATE_EPOCH, first.vars.STATE_EPOCH);
+  assert.equal(
+    deploymentConfig(identifiers, first, 'sites').vars.STATE_EPOCH,
+    first.vars.STATE_EPOCH,
+  );
   first.vars.PUBLIC_ENABLED = 'true';
   first.vars.REPORTING_ENABLED = 'true';
   first.vars.STATE_EPOCH = '2026-10-07T00:00:00.000Z';
@@ -26,7 +29,7 @@ test('deployment preserves the stable name, safety switches and epoch on retries
   assert.notEqual(next.vars.STATE_EPOCH, first.vars.STATE_EPOCH);
   assert.throws(() => deploymentConfig(identifiers, next, 'sites'), /Reverse cutover/);
   assert.throws(
-    () => deploymentConfig({ ...identifiers, origin: 'https://attacker.example' }, first),
+    () => deploymentConfig({ ...identifiers, origin: 'https://attacker.example' }, first, 'sites'),
     /Sites/,
   );
 });
@@ -71,4 +74,20 @@ test('live verification rejects stale or unavailable deployments without writing
     ),
     /verification failed/,
   );
+});
+
+test('direct deployment needs no Sites origin and removes an inherited Sites dependency', () => {
+  const direct = {
+    account: identifiers.account,
+    database: identifiers.database,
+    name: identifiers.name,
+  };
+  const first = deploymentConfig(direct, undefined);
+  assert.equal(first.vars.BACKEND_MODE, 'cloudflare');
+  assert.equal('SITES_ORIGIN' in first.vars, false);
+  const legacy = deploymentConfig(identifiers, undefined, 'sites');
+  const next = deploymentConfig(direct, legacy);
+  assert.equal(next.vars.BACKEND_MODE, 'cloudflare');
+  assert.equal('SITES_ORIGIN' in next.vars, false);
+  assert.equal(next.vars.PUBLIC_ENABLED, 'false');
 });
