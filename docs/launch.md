@@ -29,10 +29,30 @@ Review at day 30 regardless of participation. Ask for voluntary examples of chan
 
 I'm trying a small open-source experiment called Agent Signal. When an agent's GitHub HTTPS push gets a server error, it can share a tiny category-only report and immediately see recent matching unresolved reports. The agent keeps its own retry and permission rules.
 
-It doesn't collect repository URLs or command output, and its anonymous counts aren't proof of an outage. I'm looking for a few people who already do GitHub work with agents to try the opt-in integration and tell me whether it saves them time. Free, MIT licensed, no advertising. [Verified installation link] [Public source link]
+It doesn't collect repository URLs or command output, and its anonymous counts aren't proof of an outage. I'm looking for a few people who already do GitHub work with agents to try the opt-in integration and tell me whether it saves them time. Free, MIT licensed, no advertising. https://github.com/lukeivers/agent-signal-release/blob/main/docs/install.md
 
 ## Draft personal invitation — do not send
 
-I've built a small open-source resource for agents: a GitHub push server error can be compared with recent matching reports from other agents, without uploading logs or repository details. I'm running one bounded experiment to see whether it actually helps. If this sounds useful to people you know, would you introduce me to a couple of potential testers or share the launch post once? No ongoing promotion needed. [Verified demo/installation link]
+I've built a small open-source resource for agents: a GitHub push server error can be compared with recent matching reports from other agents, without uploading logs or repository details. I'm running one bounded experiment to see whether it actually helps. If this sounds useful to people you know, would you introduce me to a couple of potential testers or share the launch post once? No ongoing promotion needed. https://github.com/lukeivers/agent-signal-release/blob/main/docs/install.md
 
-Before sending, replace placeholders and update claims to the hosted evidence. No upstream provider reporting in this version; that requires a separate privacy-reviewed process and explicit authorization.
+Before sending, verify publication and installation at the tagged release. No upstream provider reporting in this version; that requires a separate privacy-reviewed process and explicit authorization.
+
+## Operator commands — approval required before opening
+
+The prepared release is `v0.1.0-pilot.1`. Keep the original `lukeivers/agent-signal` repository private permanently; publish only the sanitized `lukeivers/agent-signal-release` repository. After explicit launch approval, reauthenticate Wrangler, verify Workers Free and no Worker secrets, publish this release repository, enable GitHub private vulnerability reporting and available free security checks, create the tag/release, then run:
+
+```sh
+node scripts/cloudflare.mjs pilot-open --approved
+```
+
+This retains the deployed address and database, opens reporting and begins a fresh ten-minute count window. Verify REST and MCP using a small synthetic canary, then remove that canary's exact observation and reporter-budget keys. Verify the public installation from the tag before announcing. Never publish ignored deployment configuration or credentials. Log Wrangler out after verification.
+
+To stop ingestion without deleting source or moving the endpoint:
+
+```sh
+node scripts/cloudflare.mjs pilot-stop
+```
+
+The stop command keeps the public endpoint available but returns unavailable for reporting/checks; scheduled deletion continues. It requires deployment access, so reauthenticate if logged out. A failed deployment/verification requires inspecting active state before retrying. The per-isolate admission cap and application budgets do not constitute a global traffic or billing firewall. Stay on Free; do not enable paid hosting to keep the pilot alive.
+
+Do not post either draft automatically. Choose one audience and up to three recipients with Luke before any sending. A day-30 review is a human checkpoint, not an installed recurring agent task.

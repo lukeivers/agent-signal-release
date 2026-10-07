@@ -67,6 +67,20 @@ export function deploymentConfig(
     },
   };
 }
+export function pilotConfig(previous, enabled, now = new Date().toISOString()) {
+  if (previous.vars.BACKEND_MODE !== 'cloudflare')
+    throw new Error('Pilot requires direct Cloudflare hosting');
+  return {
+    ...previous,
+    vars: {
+      ...previous.vars,
+      PUBLIC_ENABLED: 'true',
+      REPORTING_ENABLED: String(enabled),
+      STATE_EPOCH:
+        enabled && previous.vars.REPORTING_ENABLED !== 'true' ? now : previous.vars.STATE_EPOCH,
+    },
+  };
+}
 function execute(args) {
   const child = spawnSync(process.execPath, [wrangler, ...args], {
     cwd: root,
@@ -80,12 +94,18 @@ function execute(args) {
   if (child.status !== 0)
     throw new Error('Cloudflare command failed; inspect deployment state before retrying');
 }
+function deployCandidate(next) {
+  const candidate = resolve(directory, 'candidate.json');
+  writeFileSync(candidate, JSON.stringify(next, null, 2) + '\n', { mode: 0o600 });
+  execute(['deploy', '--config', candidate]);
+  writeFileSync(configPath, JSON.stringify(next, null, 2) + '\n', { mode: 0o600 });
+}
 export async function verifyDeployment(
   endpoint,
   config,
   privateToken,
   send = fetch,
-  attempts = 10,
+  attempts = 45,
 ) {
   const url = new URL(endpoint);
   if (
@@ -106,6 +126,7 @@ export async function verifyDeployment(
     );
   const headers = { 'Content-Type': 'application/json' };
   if (config.vars.PUBLIC_ENABLED !== 'true') headers['X-Agent-Signal-Private'] = privateToken;
+  let consecutive = 0;
   for (let attempt = 0; attempt < attempts; attempt++) {
     const response = await send(new URL('/api/v1/check', url), {
       method: 'POST',
@@ -128,7 +149,8 @@ export async function verifyDeployment(
       response.headers.get('X-Agent-Signal-Backend') === config.vars.BACKEND_MODE &&
       response.headers.get('X-Agent-Signal-Epoch') === config.vars.STATE_EPOCH;
     await response.body?.cancel();
-    if (matches) return;
+    consecutive = matches ? consecutive + 1 : 0;
+    if (consecutive === 3) return;
     if (attempt + 1 < attempts) await new Promise((resolve) => setTimeout(resolve, 1000));
   }
   throw new Error(
@@ -154,6 +176,20 @@ async function main() {
     return;
   }
   if (!previous) throw new Error('Run prepare first');
+  if (command === 'pilot-open' || command === 'pilot-stop') {
+    if (command === 'pilot-open' && args[0] !== '--approved')
+      throw new Error('Opening public reporting requires explicit launch approval and --approved');
+    const next = pilotConfig(previous, command === 'pilot-open');
+    const endpoint = JSON.parse(readFileSync(resolve(directory, 'endpoint.json'), 'utf8')).url;
+    deployCandidate(next);
+    await verifyDeployment(endpoint, next);
+    console.log(
+      command === 'pilot-open'
+        ? 'Public pilot enabled and verified.'
+        : 'Reporting stopped and verified.',
+    );
+    return;
+  }
   if (command === 'dry-run')
     return execute([
       'deploy',
@@ -182,15 +218,12 @@ async function main() {
       previous,
       mode,
     );
-    const candidate = resolve(directory, 'candidate.json');
-    writeFileSync(candidate, JSON.stringify(next, null, 2) + '\n', { mode: 0o600 });
-    execute(['deploy', '--config', candidate]);
-    writeFileSync(configPath, JSON.stringify(next, null, 2) + '\n', { mode: 0o600 });
+    deployCandidate(next);
     await verifyDeployment(endpoint, next, process.env.PRIVATE_ACCESS_TOKEN);
     console.log(`Deployment and live backend verification passed: ${mode}.`);
     return;
   }
-  throw new Error('Expected prepare, dry-run, migrate, deploy or cutover');
+  throw new Error('Expected prepare, dry-run, migrate, deploy, cutover, pilot-open or pilot-stop');
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main().catch((error) => {

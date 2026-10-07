@@ -25,6 +25,8 @@ jobs:
       - name: ShellCheck
         run: shellcheck --version
       - run: npm ci
+      - run: npm ci --prefix clients/codex --ignore-scripts
+      - run: npm audit --prefix clients/codex --audit-level=moderate
       - run: npm run audit:dependencies
       - run: npm run verify
       - run: npm run build
