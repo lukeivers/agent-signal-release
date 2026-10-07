@@ -11,7 +11,8 @@ export function classify(event) {
   if (
     typeof command !== 'string' ||
     !/^\s*git\s+push(?:\s|$)/.test(command) ||
-    /[;\n|&`]/.test(command)
+    /[;\n|&`]/.test(command) ||
+    /(?:^|\s)(?:--dry-run|-[A-Za-z]*n[A-Za-z]*)(?:\s|$)/.test(command)
   )
     return null;
   const response = event.tool_response;
@@ -20,13 +21,23 @@ export function classify(event) {
     typeof response?.exit_code === 'number'
       ? response.exit_code
       : Number(/Process exited with code (\d+)/.exec(output ?? '')?.[1] ?? NaN);
-  if (typeof output !== 'string' || !Number.isSafeInteger(exit)) return null;
-  const remote = /https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+/.exec(output)?.[0];
-  if (!remote) return null;
-  if (exit === 0 && /^To https:\/\/github\.com\//m.test(output))
-    return { state: 'recovery', remote };
-  const error = /The requested URL returned error: (502|503|504)\b/.exec(output)?.[1];
-  if (exit !== 0 && error) return { state: 'failure', remote, error: `http_${error}` };
+  if (typeof output !== 'string') return null;
+  const knownExit = Number.isSafeInteger(exit);
+  const destinations = [
+    ...output.matchAll(/^To (https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/?)\s*$/gm),
+  ];
+  const updatedRef = /^\s+[0-9a-f]{3,40}\.\.[0-9a-f]{3,40}\s+\S+\s+->\s+\S+\s*$/m.test(output);
+  const cleanSuccess = !/fatal:|error:|\[rejected\]|\[remote rejected\]/i.test(output);
+  if (destinations.length === 1 && cleanSuccess && (knownExit ? exit === 0 : updatedRef))
+    return { state: 'recovery', remote: destinations[0][1].replace(/\/$/, '') };
+  // Destination and status must come from the same diagnostic, never an
+  // unrelated URL printed by a pre-push hook or another remote's output.
+  const failure =
+    /^fatal: unable to access ['"](https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/?)['"]:\s*The requested URL returned error: (502|503|504)\s*$/m.exec(
+      output,
+    );
+  if (failure && (!knownExit || exit !== 0))
+    return { state: 'failure', remote: failure[1].replace(/\/$/, ''), error: `http_${failure[2]}` };
   return null;
 }
 export async function observe(event, options = {}) {

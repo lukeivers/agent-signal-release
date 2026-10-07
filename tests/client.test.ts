@@ -130,3 +130,54 @@ test('recovery keeps other destinations open, retries failed acknowledgements, a
     await rm(directory, { recursive: true });
   }
 });
+
+test('installed Codex plain-output shape requires explicit Git failure or successful ref update evidence', () => {
+  const plain = { ...event, tool_response: event.tool_response.output };
+  assert.equal(classify(plain)?.error, 'http_503');
+  assert.equal(
+    classify({
+      ...plain,
+      tool_response: 'The requested URL returned error: 503 https://github.com/test/project',
+    }),
+    null,
+  );
+  assert.equal(
+    classify({
+      ...plain,
+      tool_response: 'To https://github.com/test/project\n abc123..def456 main -> main',
+    })?.state,
+    'recovery',
+  );
+  assert.equal(
+    classify({
+      ...plain,
+      tool_response:
+        'To https://github.com/test/project\n ! [remote rejected] main -> main\nerror: failed to push some refs',
+    }),
+    null,
+  );
+  assert.equal(classify({ ...plain, tool_response: 'To https://github.com/test/project' }), null);
+});
+
+test('destination evidence stays in its Git block and dry runs cannot close observations', () => {
+  const withOutput = (output: string, command = 'git push') => ({
+    ...event,
+    tool_input: { command },
+    tool_response: output,
+  });
+  const success =
+    'pre-push check: https://github.com/old/repo\nTo https://github.com/new/repo\n abc123..def456 main -> main';
+  assert.equal(classify(withOutput(success))?.remote, 'https://github.com/new/repo');
+  const failure =
+    "notice: https://github.com/old/repo\nfatal: unable to access 'https://github.com/new/repo/': The requested URL returned error: 503";
+  assert.equal(classify(withOutput(failure))?.remote, 'https://github.com/new/repo');
+  assert.equal(classify(withOutput(success, 'git push --dry-run')), null);
+  assert.equal(classify(withOutput(success, 'git push -n')), null);
+  assert.equal(classify(withOutput(success, 'git push -vn')), null);
+  assert.equal(
+    classify(
+      withOutput(`${success}\nTo https://github.com/old/repo\n abc123..def456 main -> main`),
+    ),
+    null,
+  );
+});
