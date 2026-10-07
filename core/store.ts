@@ -17,8 +17,10 @@ export interface Database {
 type Row = { sequence: number; state: string; observed: number };
 export class Store {
   private db: Database;
-  constructor(db: Database) {
+  private partition: string;
+  constructor(db: Database, partition = '') {
     this.db = db;
+    this.partition = partition ? `${partition}:` : '';
   }
   async check(value: Cohort, now: number, reporter?: Identity): Promise<Aggregate> {
     const response = await this.db
@@ -29,7 +31,7 @@ export class Store {
       COALESCE(SUM(state='failure' AND reporter<>?),0) AS others
       FROM observations WHERE cohort=? AND observed>? AND expires>?`,
       )
-      .bind(reporter?.hash ?? '', cohortKey(value), now - WINDOW_MS, now)
+      .bind(reporter?.hash ?? '', this.partition + cohortKey(value), now - WINDOW_MS, now)
       .all<{ outstanding: number; recovered: number; others: number }>();
     const row = response.results[0];
     return {
@@ -41,7 +43,7 @@ export class Store {
   async report(value: Observation, reporter: Identity, now: number): Promise<Aggregate> {
     const globalKey = `global:${Math.floor(now / 86_400_000)}`;
     const reporterKey = `reporter:${reporter.hash}:${Math.floor(now / 3_600_000)}`;
-    const key = cohortKey(value.cohort);
+    const key = this.partition + cohortKey(value.cohort);
     // D1 batch is transactional. changes() gates each subsequent mutation on the
     // preceding quota write; simultaneous requests cannot bypass either ceiling.
     const responses = await this.db.batch([

@@ -2,19 +2,20 @@
 
 ## Boundary
 
-Current authorization covers private GitHub source/CI and owner-private Sites registration, source push, and saved version only. No deployments, public repository, public service, social posts, outreach, directory submission, or automatic marketing are authorized. Private deployment also requires the next authorization.
+Current authorization covers private GitHub source/CI, owner-private Sites synthetic deployment, and guarded Cloudflare migration preparation. Public source/service access, real reporting, social posts, outreach, directory submissions and paid activation remain separately authorized actions.
 
-Before public source publication, complete [open-source release preparation](open-source-readiness.md). This does not replace the hosted gates below.
+Before public source publication, complete [open-source release preparation](open-source-readiness.md).
 
-## Gates for a separately authorized hosted pilot
+## Launch review
 
-- Confirm Sites can expose these routes and MCP tools to the intended users, with the platform's upstream private/OAuth access enforced. Test an actual tool call; locally listing tools is insufficient. Verify how reporting credentials coexist with platform authorization.
-- Verify actual ingress/request/error/security logging, Authorization redaction, MCP argument/transcript handling, and D1 backup retention. Disable optional invocation/tracing logs and record provider-retained metadata. Reject this host if the intended privacy promise cannot be met.
-- Provision a real D1 binding through Sites, apply the immutable migration, and verify atomic quotas under hosted concurrent requests. The placeholder ID is for local tooling only.
-- Verify Sites supports scheduled cleanup. Wire the scheduled handler at a documented cadence, observe deletion after capability expiry, and then define the maximum physical-retention delay. If not supported, solve retention before enabling ingestion; do not rely on filtered aggregates to claim deletion.
-- Verify request/read/write quotas and hard spend controls, including rejected traffic, checks, MCP initialization, cleanup, indexes, logs, and backups. Global D1 write budget does not cap Worker traffic cost. Choose a tested disable/shutdown mechanism. No paid plan or paid service upgrade is preapproved.
-- Review the installed-client smoke and actual pilot capture surface. Confirm hook trust/opt-in remains explicit. No broad ChatGPT automatic-capture claim.
-- Review the exact candidate SHA, privacy wording, and disabled-by-default flag. After private hosted tests, obtain authorization for public GitHub, public Sites access, and enabling reporting.
+- Verify the stable Cloudflare address serves both REST and MCP against Sites and after switching to the pre-provisioned Cloudflare D1. Publish installation instructions using only that stable address. Review [cutover](cloudflare-cutover.md).
+- Keep privacy claims limited to application projection/storage. Disclose provider ingress/security metadata, Sites traffic analytics, MCP capability transcript exposure, and backups rather than claiming those are absent.
+- Distinguish the configured cleanup schedule from an observed physical-deletion deadline. An explicitly disclosed limitation can accompany a consented pilot; expiry is not deletion.
+- Identify current application and hosting ceilings and test the disable mechanism. Unknown Sites allowances are a bounded-pilot limitation, not a guarantee of free overages. Cloudflare migration must already be rehearsed; no paid activation or automatic upgrade is preapproved.
+- Confirm hook trust/opt-in and the actual supported client connection. No broad ChatGPT automatic-capture or independent-outage claim.
+- Review the exact candidate SHA, updated wording and disabled-by-default flags. Then obtain authorization for public GitHub, public Sites page/stable API access, enabling reporting, and the exact one-time announcement/outreach.
+
+Hosted concurrency, cleanup-delay and load evidence can improve the release assessment, but missing evidence must be stated honestly rather than turned into unsupported performance or privacy claims.
 
 ## One launch effort
 

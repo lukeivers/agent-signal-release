@@ -160,7 +160,7 @@ export async function observe(event, options = {}) {
           counts = JSON.parse(text);
         if (
           [counts.outstanding, counts.otherOutstanding, counts.recovered].every(
-            (value) => Number.isSafeInteger(value) && value >= 0 && value <= 10000,
+            (value) => Number.isSafeInteger(value) && value >= 0 && value <= 20000,
           )
         ) {
           answer = {

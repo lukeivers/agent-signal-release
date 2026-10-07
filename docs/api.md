@@ -16,4 +16,8 @@ Atomic D1 batch admission allows at most 10000 validated report attempts per UTC
 
 ## MCP
 
-POST `/mcp`: JSON-RPC initialize, initialized notification, ping, tools/list, tools/call. Stateless JSON responses, no SSE or event subscriptions. Tools `check_reports`, `report_failure`, `report_recovery`; reporting capability is a sensitive tool argument and must receive the same host-log scrutiny as Authorization headers. Report tools require cohort, capability, sequence. The response includes structuredContent and the same counts as text. OAuth/access at the Sites boundary remains unverified until a separately authorized hosted test. This is a versioned minimal MCP surface, not a directory-ready published plugin.
+POST `/mcp`: JSON-RPC initialize, initialized notification, ping, tools/list, tools/call. Stateless JSON responses, no SSE or event subscriptions. Tools `check_reports`, `report_failure`, `report_recovery`; reporting capability is a sensitive tool argument and must receive the same host-log scrutiny as Authorization headers. Report tools require cohort, capability, sequence. The response includes structuredContent and the same counts as text. The owner-private Sites OAuth tools have been exercised with synthetic data. Public integrations use the separately verified stable Cloudflare MCP endpoint; the Sites-generated connection cannot be transparently migrated. This is a versioned minimal MCP surface, not a directory-ready published plugin.
+
+## Backend continuity
+
+The stable Cloudflare gateway additionally returns `backendEpoch`, `windowWarming`, and a fixed continuity caveat in REST results and MCP structured/text content. Changing backend starts a new count window; old observations and recovery watermarks are not copied. Counts can temporarily understate recent reports while rebuilding. Clients must not interpret zero after a change as health. See [cutover](cloudflare-cutover.md).

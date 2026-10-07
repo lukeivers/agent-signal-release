@@ -1,0 +1,192 @@
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = fileURLToPath(new URL('..', import.meta.url));
+const directory = resolve(root, '.cloudflare');
+const configPath = resolve(directory, 'wrangler.json');
+const wrangler = resolve(root, 'node_modules/wrangler/bin/wrangler.js');
+
+export function deploymentConfig({ account, database, name, origin }, previous, mode = 'sites') {
+  if (
+    !/^[a-f0-9]{32}$/.test(account) ||
+    !/^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(database) ||
+    !/^[a-z][a-z0-9-]{2,62}$/.test(name) ||
+    !['sites', 'cloudflare'].includes(mode)
+  )
+    throw new Error('Invalid deployment identifiers or mode');
+  const site = new URL(origin);
+  if (
+    site.protocol !== 'https:' ||
+    !site.hostname.endsWith('.chatgpt.site') ||
+    site.port ||
+    site.username ||
+    site.password ||
+    site.pathname !== '/' ||
+    site.search ||
+    site.hash
+  )
+    throw new Error('Expected a root Sites HTTPS origin');
+  if (
+    previous?.vars.BACKEND_MODE === 'cloudflare' &&
+    mode === 'sites' &&
+    previous.vars.PUBLIC_ENABLED === 'true'
+  )
+    throw new Error('Reverse cutover requires a separately reviewed fresh-window rehearsal');
+  const template = JSON.parse(readFileSync(resolve(root, 'wrangler.cloudflare.json'), 'utf8'));
+  return {
+    ...template,
+    name,
+    account_id: account,
+    main: '../core/cloudflare-worker.ts',
+    workers_dev: true,
+    d1_databases: [
+      {
+        binding: 'DB',
+        database_name: 'agent-signal',
+        database_id: database,
+        migrations_dir: '../drizzle',
+      },
+    ],
+    vars: {
+      ...template.vars,
+      ...previous?.vars,
+      BACKEND_MODE: mode,
+      SITES_ORIGIN: site.origin,
+      STATE_EPOCH:
+        previous?.vars.BACKEND_MODE === mode ? previous.vars.STATE_EPOCH : new Date().toISOString(),
+    },
+  };
+}
+function execute(args) {
+  const child = spawnSync(process.execPath, [wrangler, ...args], {
+    cwd: root,
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      WRANGLER_SEND_METRICS: 'false',
+      WRANGLER_LOG_PATH: resolve(directory, 'logs'),
+    },
+  });
+  if (child.status !== 0)
+    throw new Error('Cloudflare command failed; inspect deployment state before retrying');
+}
+export async function verifyDeployment(
+  endpoint,
+  config,
+  privateToken,
+  send = fetch,
+  attempts = 10,
+) {
+  const url = new URL(endpoint);
+  if (
+    url.protocol !== 'https:' ||
+    !url.hostname.endsWith('.workers.dev') ||
+    url.hostname.split('.')[0] !== config.name ||
+    url.port ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash ||
+    url.pathname !== '/'
+  )
+    throw new Error('Invalid stable deployment endpoint');
+  if (config.vars.PUBLIC_ENABLED !== 'true' && !privateToken)
+    throw new Error(
+      'Private rehearsal verification requires PRIVATE_ACCESS_TOKEN in the process environment',
+    );
+  const headers = { 'Content-Type': 'application/json' };
+  if (config.vars.PUBLIC_ENABLED !== 'true') headers['X-Agent-Signal-Private'] = privateToken;
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    const response = await send(new URL('/api/v1/check', url), {
+      method: 'POST',
+      headers,
+      redirect: 'error',
+      signal: AbortSignal.timeout(10000),
+      body: JSON.stringify({
+        cohort: {
+          service: 'github',
+          operation: 'git_push',
+          access: 'git_https',
+          environment: 'unknown',
+          error: 'http_503',
+        },
+      }),
+    });
+    const expected = config.vars.REPORTING_ENABLED === 'true' ? 200 : 503;
+    const matches =
+      response.status === expected &&
+      response.headers.get('X-Agent-Signal-Backend') === config.vars.BACKEND_MODE &&
+      response.headers.get('X-Agent-Signal-Epoch') === config.vars.STATE_EPOCH;
+    await response.body?.cancel();
+    if (matches) return;
+    if (attempt + 1 < attempts) await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+  throw new Error(
+    'Live backend verification failed; do not claim cutover success or automatically replay writes',
+  );
+}
+async function main() {
+  const [command, ...args] = process.argv.slice(2);
+  mkdirSync(directory, { recursive: true, mode: 0o700 });
+  const previous = existsSync(configPath)
+    ? JSON.parse(readFileSync(configPath, 'utf8'))
+    : undefined;
+  if (command === 'prepare') {
+    if (previous)
+      throw new Error('Configuration already exists; preserve its endpoint and deployment state');
+    const [account, database, name, origin] = args;
+    writeFileSync(
+      configPath,
+      JSON.stringify(deploymentConfig({ account, database, name, origin }), null, 2) + '\n',
+      { mode: 0o600 },
+    );
+    console.log('Prepared guarded deployment configuration; no deployment performed.');
+    return;
+  }
+  if (!previous) throw new Error('Run prepare first');
+  if (command === 'dry-run')
+    return execute([
+      'deploy',
+      '--config',
+      configPath,
+      '--dry-run',
+      '--outdir',
+      resolve(directory, 'bundle'),
+    ]);
+  if (command === 'migrate')
+    return execute(['d1', 'migrations', 'apply', 'DB', '--remote', '--config', configPath]);
+  if (command === 'deploy' || command === 'cutover') {
+    const endpoint = JSON.parse(readFileSync(resolve(directory, 'endpoint.json'), 'utf8')).url;
+    if (previous.vars.PUBLIC_ENABLED !== 'true' && !process.env.PRIVATE_ACCESS_TOKEN)
+      throw new Error(
+        'Private rehearsal deployment requires PRIVATE_ACCESS_TOKEN for live verification',
+      );
+    const mode = command === 'cutover' ? 'cloudflare' : previous.vars.BACKEND_MODE;
+    const next = deploymentConfig(
+      {
+        account: previous.account_id,
+        database: previous.d1_databases[0].database_id,
+        name: previous.name,
+        origin: previous.vars.SITES_ORIGIN,
+      },
+      previous,
+      mode,
+    );
+    const candidate = resolve(directory, 'candidate.json');
+    writeFileSync(candidate, JSON.stringify(next, null, 2) + '\n', { mode: 0o600 });
+    execute(['deploy', '--config', candidate]);
+    writeFileSync(configPath, JSON.stringify(next, null, 2) + '\n', { mode: 0o600 });
+    await verifyDeployment(endpoint, next, process.env.PRIVATE_ACCESS_TOKEN);
+    console.log(`Deployment and live backend verification passed: ${mode}.`);
+    return;
+  }
+  throw new Error('Expected prepare, dry-run, migrate, deploy or cutover');
+}
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error(error.message);
+    process.exitCode = 1;
+  });
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "agent-signal",
+  "main": "core/cloudflare-worker.ts",
+  "compatibility_date": "2026-10-07",
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": false },
+  "triggers": { "crons": ["*/5 * * * *"] },
+  "vars": {
+    "BACKEND_MODE": "cloudflare",
+    "PUBLIC_ENABLED": "false",
+    "REPORTING_ENABLED": "false",
+    "STATE_EPOCH": "2026-10-07T00:00:00.000Z"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "agent-signal",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "drizzle"
+    }
+  ]
+}

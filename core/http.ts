@@ -1,7 +1,21 @@
-import { SignalError, cohort, identity, object, observation, result, ENUMS } from './contract.ts';
+import {
+  SignalError,
+  cohort,
+  identity,
+  object,
+  observation,
+  result,
+  ENUMS,
+  WINDOW_MS,
+} from './contract.ts';
 import { Store } from './store.ts';
 import type { Database } from './store.ts';
-type Environment = { DB?: Database; REPORTING_ENABLED?: string };
+import type { Aggregate, Cohort, Observation } from './contract.ts';
+export interface Backend {
+  check(value: Cohort, now: number): Promise<Aggregate>;
+  report(value: Observation, capability: string, now: number): Promise<Aggregate>;
+}
+type Environment = { DB?: Database; REPORTING_ENABLED?: string; STATE_EPOCH?: string };
 const limits = new WeakMap<object, { window: number; used: number }>();
 function json(value: unknown, status = 200) {
   return Response.json(value, {
@@ -9,7 +23,7 @@ function json(value: unknown, status = 200) {
     headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' },
   });
 }
-async function body(request: Request) {
+export async function readSignalObject(request: Request | Response) {
   if (
     !request.headers.get('content-type')?.startsWith('application/json') ||
     Number(request.headers.get('content-length')) > 8192
@@ -76,6 +90,7 @@ export async function handle(
   request: Request,
   env: Environment,
   now = Date.now(),
+  backend?: Backend,
 ): Promise<Response> {
   let rpcId: unknown = null,
     rpc = false,
@@ -100,7 +115,7 @@ export async function handle(
     const version = request.headers.get('MCP-Protocol-Version');
     if (rpc && version && !['2025-11-25', '2025-03-26'].includes(version))
       throw new SignalError('invalid_request');
-    const data = await body(request);
+    const data = await readSignalObject(request);
     let action = url.pathname.split('/').pop(),
       args = data;
     if (rpc) {
@@ -140,17 +155,34 @@ export async function handle(
       args = object(params.arguments);
     } else if (!['/api/v1/check', '/api/v1/failure', '/api/v1/recovery'].includes(url.pathname))
       throw new SignalError('invalid_request');
-    if (!env.DB || env.REPORTING_ENABLED !== 'true') throw new SignalError('unavailable', 503);
-    const store = new Store(env.DB);
+    if ((!env.DB && !backend) || env.REPORTING_ENABLED !== 'true')
+      throw new SignalError('unavailable', 503);
+    const store = env.DB ? new Store(env.DB, env.STATE_EPOCH) : undefined;
     let counts;
-    if (action === 'check') counts = await store.check(cohort(args.cohort), now);
-    else if (action === 'failure' || action === 'recovery') {
+    if (action === 'check') {
+      const value = cohort(args.cohort);
+      counts = backend ? await backend.check(value, now) : await store!.check(value, now);
+    } else if (action === 'failure' || action === 'recovery') {
       const token = rpc
         ? args.capability
         : request.headers.get('authorization')?.replace(/^Bearer /, '');
-      counts = await store.report(observation(args, action), await identity(token, now), now);
+      const value = observation(args, action),
+        reporter = await identity(token, now);
+      counts = backend
+        ? await backend.report(value, token as string, now)
+        : await store!.report(value, reporter, now);
     } else throw new SignalError('invalid_request');
-    const answer = result(counts, now);
+    const answer = {
+      ...result(counts, now),
+      ...(env.STATE_EPOCH
+        ? {
+            backendEpoch: env.STATE_EPOCH,
+            windowWarming: now < Date.parse(env.STATE_EPOCH) + WINDOW_MS,
+            continuity:
+              'Backend changes can omit earlier reports. Counts rebuild over ten minutes; zero does not establish health.',
+          }
+        : {}),
+    };
     return rpc
       ? json({
           jsonrpc: '2.0',

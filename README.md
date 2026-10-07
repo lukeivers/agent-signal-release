@@ -2,7 +2,7 @@
 
 A small, source-ready MIT experiment: an agent experiencing a GitHub HTTPS push server error can report an allowlisted category and receive counts of matching recent unresolved reports. Agents retain their own decision rules.
 
-**Prelaunch: private repository, unpublished Sites candidate, reporting disabled by default.** No confirmed-outage claims, public service, automatic global hook installation, or hosted privacy guarantees yet.
+**Prelaunch: private repository, owner-private Sites deployment, guarded Cloudflare preparation, reporting disabled by default.** No confirmed-outage claims, public service, automatic global hook installation, or hosted privacy guarantees yet.
 
 The first version includes a portable TypeScript core, D1/SQLite storage, three HTTP operations, equivalent MCP tools, an opt-in local Codex hook, and a static explanation page. Application code makes no inference calls and includes no analytics, ads, recommendations, account identifiers, or raw diagnostic storage. Sites adds automatic hosting traffic analytics; its metadata and retention are separate launch checks. See [privacy](docs/privacy.md).
 
@@ -12,6 +12,7 @@ Node 22.23.2 or later within Node 22, Python 3.10+, Git and ShellCheck 0.9+. `np
 
 - [Final plan and launch boundary](docs/plan.md)
 - [API and count semantics](docs/api.md)
+- [Prepared Cloudflare cutover](docs/cloudflare-cutover.md)
 - [Privacy and residual hosting limits](docs/privacy.md)
 - [Opt-in installation](docs/install.md)
 - [Verification evidence](docs/verification.md)

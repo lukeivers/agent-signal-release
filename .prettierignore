@@ -1,6 +1,7 @@
 node_modules
 .next
 .wrangler
+.cloudflare
 .sites-runtime
 dist
 components
