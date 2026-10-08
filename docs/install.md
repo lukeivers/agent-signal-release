@@ -1,8 +1,8 @@
-# Install Agent Signal for a local Codex project
+# Install Agent Signal for local Codex
 
 After setup, Codex can automatically share a minimal report when a supported GitHub HTTPS push fails with HTTP 502, 503 or 504, then see how many other matching reports are outstanding. Successful matching pushes can report recovery.
 
-This is an early, opt-in pilot. It works through a **local Codex hook**, installed separately for each project. There is no directory-listed plugin yet, and these steps do not enable automatic reporting in ChatGPT web, cloud sessions, Claude Code or other agents.
+This is an early, opt-in pilot. It works through a **local Codex hook**, installed once for all your local projects or only for a specific project. There is no directory-listed plugin yet, and these steps do not enable automatic reporting in ChatGPT web, cloud sessions, Claude Code or other agents.
 
 ## Before you start
 
@@ -29,7 +29,23 @@ Git may mention a detached HEAD; that is expected for a pinned release. This ins
 
 Already have an Agent Signal installation? Use the [update instructions](codex-hook.md#update-an-existing-installation) instead of cloning over it.
 
-## 2. Choose the project and prepare its hook
+## 2. Choose all projects or one project
+
+Choose one scope. Both use the same reviewed hook; all-projects installation opts every local project using your user configuration into supported reporting.
+
+### All projects for your user
+
+With Codex's default `~/.codex` configuration location, run from the Agent Signal checkout:
+
+```sh
+node scripts/install-codex-hook.mjs "$HOME"
+```
+
+The installer should print `Prepared: …/.codex/hooks.json`, referring to your home directory's `.codex` folder. It preserves other user hooks and backs up any existing file. This applies to current and future local projects using that user configuration, not other users, computers or cloud sessions. If you set `CODEX_HOME` to a different location, use the single-project option below; this command does not target a custom Codex home.
+
+Already installed per project? Before enabling the user hook, remove only Agent Signal's entries from those projects' `.codex/hooks.json` files, preserving other hooks. Check `/hooks` for additional copies, including inline configuration or plugins. Codex [runs matching hooks from all sources](https://learn.chatgpt.com/docs/hooks); a user hook does not replace project hooks. Keep just one Agent Signal observer active per session.
+
+### One specific project
 
 Set `PROJECT` to the full path of the existing project where you use Codex. Replace the example between the quotes; keep the quotes if the path contains spaces.
 
@@ -40,13 +56,15 @@ node scripts/install-codex-hook.mjs "$PROJECT"
 
 For example, if your project is in `~/Projects/my-app`, use `PROJECT="$HOME/Projects/my-app"`.
 
-The installer should print `Prepared: …/.codex/hooks.json` and tell you to review the hook. It preserves other hook entries and backs up any existing file. **Reporting is not enabled by installation alone.** Do not commit the generated hook file or backup: they contain local paths.
+The installer should print `Prepared: …/.codex/hooks.json`, referring to the chosen project. It preserves other project hooks and backs up any existing file.
+
+For either scope, **reporting is not enabled by installation alone.** The installer tells you to review the hook. Do not commit the generated hook file or backup: they contain local paths.
 
 ## 3. Review and enable it in Codex
 
-Open a local Codex session in the project you chose. Enter `/hooks`, find the project hook under `PostToolUse` with matcher `Bash`, and review its command. It should point to this checkout's `clients/codex/hook.mjs` and the public Agent Signal endpoint.
+Open or restart a local Codex session: any project for all-projects setup, or the chosen project for single-project setup. Enter `/hooks`, find the user or project hook under `PostToolUse` with matcher `Bash`, and review its source and command. It should point to this checkout's `clients/codex/hook.mjs` and the public Agent Signal endpoint.
 
-Trust that hook only if you want this project to report. If `/hooks` is unavailable or the entry does not appear, stop and follow [troubleshooting](#troubleshooting). Do not bypass hook trust.
+Trust that hook only if you want the selected scope to report. If `/hooks` is unavailable or the entry does not appear, stop and follow [troubleshooting](#troubleshooting). Do not bypass hook trust.
 
 ## 4. Know what to expect
 
@@ -60,16 +78,16 @@ Do not deliberately break a push or send fabricated reports to the public pilot 
 
 ## Troubleshooting
 
-| What you see                                   | What to do                                                                                                                                                                                                                             |
-| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `node` or `git` is missing, or Node is too old | Install or update the missing tool, then restart your terminal and repeat the version check.                                                                                                                                           |
-| `Installation stopped`                         | Check that `PROJECT` exists and that step 1 completed. Existing malformed or symlinked hook configurations are refused. See the [hook reference](codex-hook.md#installation-details).                                                  |
-| An Agent Signal hook already exists            | Follow the [update instructions](codex-hook.md#update-an-existing-installation); do not add a second observer.                                                                                                                         |
-| No Agent Signal entry in `/hooks`              | Confirm you opened the same project locally and its project configuration is trusted. Restart the session if needed. Your client or managed settings may not permit local hooks; [ask for help](../SUPPORT.md) with sanitized details. |
-| The hook is trusted but stays quiet            | Normal commands, unsupported pushes and unavailable reporting are quiet. Check the limitations above; do not infer success or an outage from silence.                                                                                  |
+| What you see                                   | What to do                                                                                                                                                                                                                                                                              |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `node` or `git` is missing, or Node is too old | Install or update the missing tool, then restart your terminal and repeat the version check.                                                                                                                                                                                            |
+| `Installation stopped`                         | Check that the target home/project directory exists and that step 1 completed. Existing malformed or symlinked hook configurations are refused. See the [hook reference](codex-hook.md#installation-details).                                                                           |
+| An Agent Signal hook already exists            | Follow the [update instructions](codex-hook.md#update-an-existing-installation); do not add a second observer.                                                                                                                                                                          |
+| No Agent Signal entry in `/hooks`              | Check the user/project source path. For project setup, open the same project locally and confirm its project configuration is trusted. Restart the session if needed. Your client or managed settings may not permit local hooks; [ask for help](../SUPPORT.md) with sanitized details. |
+| The hook is trusted but stays quiet            | Normal commands, unsupported pushes and unavailable reporting are quiet. Check the limitations above; do not infer success or an outage from silence.                                                                                                                                   |
 
 ## Turn it off or remove it
 
-Disable the Agent Signal hook in `/hooks` to stop reporting. To uninstall, remove only its entry from the project's `.codex/hooks.json`, preserving other hooks. Once no project uses this checkout, you may delete it. Local state cleanup and update details are in the [hook reference](codex-hook.md).
+Disable the Agent Signal hook in `/hooks` to stop that hook from reporting. To uninstall, remove only its entry from `~/.codex/hooks.json` for all-projects setup, or `<project>/.codex/hooks.json` for single-project setup, preserving other hooks. A project hook does not disable a user hook; stopping user-wide reporting requires disabling/removing the user hook. Once no hook uses this checkout, you may delete it. Local state cleanup and update details are in the [hook reference](codex-hook.md).
 
 For manual checks or another integration, see the [API reference](api.md). Connecting MCP gives an agent explicit tools; it does not install an automatic observer.

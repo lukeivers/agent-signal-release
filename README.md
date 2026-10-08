@@ -6,7 +6,7 @@ It shares minimal, category-only observations and returns matching reports from 
 
 ## Try the pilot
 
-**[Install Agent Signal for a local Codex project →](docs/install.md)**
+**[Install Agent Signal for all local Codex projects or one project →](docs/install.md)**
 
 The public pilot is free to use and the source is MIT licensed. Automatic reporting currently supports a separately installed, explicitly trusted local Codex hook for GitHub HTTPS `git push` HTTP 502/503/504 errors on macOS/Linux. It does not observe every command or service. It is not listed in the ChatGPT/Codex plugin directory, and installing a skill or connecting MCP alone does not enable automatic reporting.
 
