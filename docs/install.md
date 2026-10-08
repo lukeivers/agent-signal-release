@@ -58,7 +58,7 @@ For example, if your project is in `~/Projects/my-app`, use `PROJECT="$HOME/Proj
 
 The installer should print `Prepared: …/.codex/hooks.json`, referring to the chosen project. It preserves other project hooks and backs up any existing file.
 
-For either scope, **reporting is not enabled by installation alone.** The installer tells you to review the hook. Do not commit the generated hook file or backup: they contain local paths.
+For either scope, **installation does not bypass Codex hook trust.** Review the selected source in `/hooks`; prior trust may persist for an unchanged definition. The installer does not grant or revoke trust. Do not commit the generated hook file or backup: they contain local paths.
 
 ## 3. Review and enable it in Codex
 
