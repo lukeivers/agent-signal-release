@@ -40,7 +40,7 @@ for (const [file, hash] of Object.entries(provenance.sha256)) {
     throw new Error(`Vendored DevKit integrity mismatch: ${file}`);
 }
 
-const retiredDirectories = ['app', 'build', 'lib', 'db', '.openai'];
+const retiredDirectories = ['app', 'build', 'lib', 'db', '.openai', '.sites-runtime'];
 for (const path of retiredDirectories)
   if (existsSync(path)) throw new Error(`Retired starter directory must not be restored: ${path}`);
 const dependencies = JSON.parse(readFileSync('package.json', 'utf8'));

@@ -48,3 +48,6 @@ next-env.d.ts
 *.tar.gz
 /clients/codex/state/
 /.cloudflare/
+
+# Retired local prototype/cache artifacts must not enter source.
+/.sites-runtime/
