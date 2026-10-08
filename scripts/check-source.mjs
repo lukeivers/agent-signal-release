@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 const files = [];
 function walk(root) {
   for (const entry of readdirSync(root, { withFileTypes: true })) {
@@ -49,3 +50,14 @@ const retiredPackages =
 for (const name of Object.keys({ ...dependencies.dependencies, ...dependencies.devDependencies }))
   if (retiredPackages.test(name))
     throw new Error(`Retired framework dependency must not be restored: ${name}`);
+
+const tracked = spawnSync('git', ['ls-files', '-z'], { encoding: 'utf8' });
+if (tracked.status !== 0) throw new Error('Tracked artifact inventory unavailable');
+for (const path of tracked.stdout.split('\0')) {
+  if (
+    /(?:^|\/)(?:node_modules|\.sites-runtime|\.wrangler|\.cloudflare|_cacache)(?:\/|$)|\.log$/.test(
+      path,
+    )
+  )
+    throw new Error('Generated caches, runtime state and logs must not be tracked');
+}
