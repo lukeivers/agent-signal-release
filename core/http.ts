@@ -19,7 +19,7 @@ function json(value: unknown, status = 200) {
     headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' },
   });
 }
-async function readSignalObject(request: Request | Response) {
+async function readSignalObject(request: Request) {
   if (
     !request.headers.get('content-type')?.startsWith('application/json') ||
     Number(request.headers.get('content-length')) > 8192
@@ -103,7 +103,7 @@ export async function handle(
     toolCall = false;
   try {
     // Early isolate-local admission control bounds parsing and database access.
-    // Platform-wide read/traffic ceilings are a separate launch gate.
+    // This does not limit traffic across Worker isolates or provider usage.
     const url = new URL(request.url);
     rpc = url.pathname === '/mcp';
     if (now < budget.window || now - budget.window >= 60_000) {
@@ -198,7 +198,7 @@ export async function handle(
       : json(answer);
   } catch (error) {
     const safe = error instanceof SignalError ? error : new SignalError('unavailable', 503);
-    // No logging, exception text, raw request, or upstream output escapes here.
+    // Return fixed public error codes without logging or exposing exception details.
     if (rpc && toolCall)
       return json({
         jsonrpc: '2.0',

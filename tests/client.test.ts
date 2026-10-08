@@ -252,3 +252,9 @@ test('a stalled endpoint is aborted within the hook budget and makes no automati
     await rm(directory, { recursive: true });
   }
 });
+
+test('redirected pushes are excluded even when stderr contains a matching failure', () => {
+  for (const command of ['git push > push.log', 'git push 2> push.log', 'git push < input.txt']) {
+    assert.equal(classify({ ...event, tool_input: { command } }), null);
+  }
+});

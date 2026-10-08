@@ -1,7 +1,14 @@
 {
   "version": "2.0.1",
   "sha256": {
+    "architecture.mjs": "946d513683d9989e1512927bc010a88fe4fa6f3cb0a9271a753b029562980a73",
+    "skipped_tests.py": "94a5c081d6d86d75e96357b42e0db7de95b1834a12a8785ef402fc843b69bf5c"
+  },
+  "upstream_sha256": {
     "architecture.mjs": "725dde1b819cbc72aa766d8a51d7134556b991b217bc6d2403696b5807dd306e",
     "skipped_tests.py": "94a5c081d6d86d75e96357b42e0db7de95b1834a12a8785ef402fc843b69bf5c"
+  },
+  "local_changes": {
+    "architecture.mjs": "Comment-only clarification of Git inventory and static import graph; executable code unchanged."
   }
 }

@@ -8,17 +8,17 @@
   "scripts": {
     "dev": "node node_modules/wrangler/bin/wrangler.js dev --config wrangler.cloudflare.json --local --persist-to .wrangler/state --ip 127.0.0.1",
     "build": "node scripts/build-worker.mjs",
-    "start": "node node_modules/wrangler/bin/wrangler.js dev --config wrangler.cloudflare.json --local --persist-to .wrangler/state --ip 127.0.0.1",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit && tsc --project tsconfig.tests.json --noEmit",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "format:check": "prettier --check .",
-    "verify": "npm run format:check && npm run architecture && npm run unused && npm run lint && npm run typecheck && npm run test:skips && npm test",
+    "verify": "npm run format:check && npm run docs:check && npm run architecture && npm run unused && npm run lint && npm run typecheck && npm run test:skips && npm test",
     "architecture": "node tools/devkit/architecture.mjs && node scripts/check-source.mjs",
     "test:skips": "python3 tools/devkit/skipped_tests.py",
     "audit:dependencies": "node scripts/dependency-audit.mjs",
     "test:worker": "npm run build && node scripts/direct-worker-smoke.mjs",
-    "unused": "knip"
+    "unused": "knip",
+    "docs:check": "node scripts/check-docs.mjs"
   },
   "devDependencies": {
     "@eslint/js": "9.39.4",

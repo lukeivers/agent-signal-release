@@ -11,7 +11,7 @@ export function classify(event) {
   if (
     typeof command !== 'string' ||
     !/^\s*git\s+push(?:\s|$)/.test(command) ||
-    /[;\n|&`]/.test(command) ||
+    /[;\n|&`<>]/.test(command) ||
     /(?:^|\s)(?:--dry-run|-[A-Za-z]*n[A-Za-z]*)(?:\s|$)/.test(command)
   )
     return null;

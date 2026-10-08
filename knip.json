@@ -6,7 +6,6 @@
         "core/cloudflare-worker.ts",
         "scripts/cloudflare.mjs",
         "scripts/install-codex-hook.mjs",
-        "scripts/local-smoke.mjs",
         "tests/**/*.test.ts"
       ],
       "project": ["**/*.{ts,mjs}"]

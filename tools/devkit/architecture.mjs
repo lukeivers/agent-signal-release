@@ -126,7 +126,7 @@ export function readConfig(root) {
   return config;
 }
 
-/** Tracked and new-but-unignored files, so nested worktrees and build output never count. */
+/** Files visible to Git: tracked files and new files not excluded by ignore rules. */
 function listedFiles(root) {
   const listed = spawnSync("git", ["ls-files", "--cached", "--others", "--exclude-standard"], {
     cwd: root,
@@ -167,7 +167,7 @@ function inventory(root, config) {
   return { failures, parsed, listed: new Set(listed) };
 }
 
-/** Every package a tracked package.json names or depends on, so a bare import must be one. */
+/** Packages named or declared by visible package manifests. */
 function declaredPackages(root, listed) {
   const names = new Set();
   for (const path of listed) {
@@ -335,7 +335,7 @@ function specifiers(ts, source) {
     ) {
       found.push({ node, specifier: node.moduleReference.expression, loaded: !node.isTypeOnly });
     } else if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) {
-      // A lazy import() runs after both modules load, which is how a cycle is broken.
+      // Dynamic imports do not add static load edges to this dependency graph.
       found.push({ node, specifier: node.arguments[0], loaded: false });
     } else if (
       ts.isCallExpression(node) &&
@@ -365,7 +365,7 @@ function packageName(specifier) {
   return specifier.startsWith("@") ? parts.slice(0, 2).join("/") : parts[0];
 }
 
-/** The tracked file a local import reaches: null when none, undefined for a package. */
+/** The visible file a local import reaches: null when none, undefined for a package. */
 function resolveLocal(from, specifier, aliases, files, listed) {
   let base;
   const alias = Object.keys(aliases).find((prefix) => specifier.startsWith(prefix));
