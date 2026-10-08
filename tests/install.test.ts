@@ -1,3 +1,4 @@
+import { temporaryProject } from './install-fixture.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile, writeFile, mkdir, rm, symlink } from 'node:fs/promises';
@@ -78,14 +79,6 @@ test('pilot switches preserve hosting identifiers, start a fresh count window an
   );
 });
 
-async function temporaryProject(check: (root: string) => Promise<void>) {
-  const root = await mkdtemp(join(tmpdir(), "signal quote's "));
-  try {
-    await check(root);
-  } finally {
-    await rm(root, { recursive: true });
-  }
-}
 const runNode = (args: string[], root?: string) =>
   spawnSync(process.execPath, args, { cwd: root, input: '{}', encoding: 'utf8' });
 function assertQuiet(result: ReturnType<typeof spawnSync>) {
@@ -126,6 +119,10 @@ test('installer rejects absent client dependencies before creating hook configur
     await writeFile(
       join(root, 'install.mjs'),
       await readFile(new URL('../clients/codex/install.mjs', import.meta.url)),
+    );
+    await writeFile(
+      join(root, 'hook-config.mjs'),
+      await readFile(new URL('../clients/codex/hook-config.mjs', import.meta.url)),
     );
     const child = runNode(
       ['--input-type=module', '-e', 'import {install} from "./install.mjs"; await install(".");'],

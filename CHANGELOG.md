@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.0-pilot.4 — 2026-10-08
+
+- Add preview-and-confirm uninstall scripts and a scoped project-to-user transition sharing the same removal logic. Preserve unrelated hooks and exact backups; refuse changed/unsafe configurations and piped approval.
+- Add `--user` installation for the terminal's `CODEX_HOME` or default `~/.codex`; reconcile installation, updates and removal instructions.
+
 ## v0.1.0-pilot.3 — 2026-10-08
 
 - Rewrite project onboarding and reconcile current installation, support, privacy and release guidance; remove obsolete prototype/planning notes and the divergent hand-edited hook example.

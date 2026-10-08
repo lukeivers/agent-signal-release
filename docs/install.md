@@ -20,7 +20,7 @@ No Agent Signal account, payment or GitHub token is needed. The hook reads tool 
 Run these commands from a folder where you can keep Agent Signal permanently, outside the project you want to observe:
 
 ```sh
-git clone --branch v0.1.0-pilot.3 --depth 1 https://github.com/lukeivers/agent-signal-release.git
+git clone --branch v0.1.0-pilot.4 --depth 1 https://github.com/lukeivers/agent-signal-release.git
 cd agent-signal-release
 npm ci --prefix clients/codex --ignore-scripts
 ```
@@ -35,15 +35,15 @@ Choose one scope. Both use the same reviewed hook; all-projects installation opt
 
 ### All projects for your user
 
-With Codex's default `~/.codex` configuration location, run from the Agent Signal checkout:
+For a new installation, run from the Agent Signal checkout:
 
 ```sh
-node scripts/install-codex-hook.mjs "$HOME"
+node scripts/install-codex-hook.mjs --user
 ```
 
-The installer should print `Prepared: …/.codex/hooks.json`, referring to your home directory's `.codex` folder. It preserves other user hooks and backs up any existing file. This applies to current and future local projects using that user configuration, not other users, computers or cloud sessions. If you set `CODEX_HOME` to a different location, use the single-project option below; this command does not target a custom Codex home.
+The installer should print `Prepared: …/hooks.json` at your user configuration location: `~/.codex` by default, or the directory selected by `CODEX_HOME` in that terminal. Use the same configuration location as your Codex sessions. It preserves other user hooks and backs up any existing file. This applies to current and future local projects using that user configuration, not other users, computers or cloud sessions.
 
-Already installed per project? Before enabling the user hook, remove only Agent Signal's entries from those projects' `.codex/hooks.json` files, preserving other hooks. Check `/hooks` for additional copies, including inline configuration or plugins. Codex [runs matching hooks from all sources](https://learn.chatgpt.com/docs/hooks); a user hook does not replace project hooks. Keep just one Agent Signal observer active per session.
+Already installed per project? Use the [confirmed transition](#switch-from-project-hooks-to-all-projects) below instead. Codex [runs matching hooks from all sources](https://learn.chatgpt.com/docs/hooks); a user hook does not replace project hooks. Keep just one Agent Signal observer active per session.
 
 ### One specific project
 
@@ -58,7 +58,7 @@ For example, if your project is in `~/Projects/my-app`, use `PROJECT="$HOME/Proj
 
 The installer should print `Prepared: …/.codex/hooks.json`, referring to the chosen project. It preserves other project hooks and backs up any existing file.
 
-For either scope, **reporting is not enabled by installation alone.** The installer tells you to review the hook. Do not commit the generated hook file or backup: they contain local paths.
+For either scope, **installation does not bypass Codex hook trust.** Review the selected source in `/hooks`; prior trust may persist for an unchanged definition. The installer does not grant or revoke trust. Do not commit the generated hook file or backup: they contain local paths.
 
 ## 3. Review and enable it in Codex
 
@@ -86,8 +86,42 @@ Do not deliberately break a push or send fabricated reports to the public pilot 
 | No Agent Signal entry in `/hooks`              | Check the user/project source path. For project setup, open the same project locally and confirm its project configuration is trusted. Restart the session if needed. Your client or managed settings may not permit local hooks; [ask for help](../SUPPORT.md) with sanitized details. |
 | The hook is trusted but stays quiet            | Normal commands, unsupported pushes and unavailable reporting are quiet. Check the limitations above; do not infer success or an outage from silence.                                                                                                                                   |
 
+## Switch from project hooks to all projects
+
+First update the checkout to this release using the [update instructions](codex-hook.md#update-an-existing-installation). Close affected Codex sessions while changing configuration. From the Agent Signal checkout, specify the folders containing your projects:
+
+```sh
+node scripts/install-codex-hook.mjs --user --scan "$HOME/Projects"
+```
+
+You can supply several folders after `--scan`. The script scans only those folders, lists each matching project hook's exact file and entry, and previews the user-wide hook it will prepare. It uses the same removal logic as uninstallation. **Nothing changes until you type `APPLY` in the interactive terminal.** Enter cancels; piped input only shows the preview. Review every path, command and backup location first.
+
+The scan skips symlinked directories, `.git` and `node_modules`, and stops at 10,000 directories. It inspects `.codex/hooks.json`, not inline TOML or plugin hooks. Unreadable, malformed or symlinked configurations stop the transition. Modified/unrecognized Agent Signal-like hooks require manual review. A scan cannot establish that no copies exist outside its scope: check `/hooks` for remaining observers before enabling the user hook.
+
+After applying, restart Codex and review the user hook under `/hooks`. Unrelated hooks are kept and edited files get exact backups. Each replacement is atomic, but several files are not one transaction: on failure, inspect the previewed files and backups before retrying.
+
 ## Turn it off or remove it
 
-Disable the Agent Signal hook in `/hooks` to stop that hook from reporting. To uninstall, remove only its entry from `~/.codex/hooks.json` for all-projects setup, or `<project>/.codex/hooks.json` for single-project setup, preserving other hooks. A project hook does not disable a user hook; stopping user-wide reporting requires disabling/removing the user hook. Once no hook uses this checkout, you may delete it. Local state cleanup and update details are in the [hook reference](codex-hook.md).
+Disable the Agent Signal hook in `/hooks` to stop it immediately. Close affected sessions, then run the appropriate command from the Agent Signal checkout:
+
+```sh
+node scripts/uninstall-codex-hook.mjs --user
+```
+
+For a single project:
+
+```sh
+node scripts/uninstall-codex-hook.mjs "/absolute/path/to/your/project"
+```
+
+To find and remove project installations under specified folders:
+
+```sh
+node scripts/uninstall-codex-hook.mjs --scan "$HOME/Projects"
+```
+
+Each command previews exact matching entries and backup locations, then requires interactive `APPLY`. Modified/unrecognized hooks are reported and left alone. The scripts preserve unrelated hooks, configuration files, old backups, the checkout and local state; they do not revoke stored Codex hook trust. A project removal does not stop a user hook. Restart sessions afterward so they reload configuration.
+
+Once no hook uses this checkout, you may delete it. State cleanup and restoration details are in the [hook reference](codex-hook.md#removal-and-backups). Never post uninstall previews or backups in public issues; they contain local paths and may contain private configuration.
 
 For manual checks or another integration, see the [API reference](api.md). Connecting MCP gives an agent explicit tools; it does not install an automatic observer.
