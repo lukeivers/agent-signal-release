@@ -10,20 +10,16 @@ import {
 } from './contract.ts';
 import { Store } from './store.ts';
 import type { Database } from './store.ts';
-import type { Aggregate, Cohort, Observation } from './contract.ts';
-export interface Backend {
-  check(value: Cohort, now: number): Promise<Aggregate>;
-  report(value: Observation, capability: string, now: number): Promise<Aggregate>;
-}
 type Environment = { DB?: Database; REPORTING_ENABLED?: string; STATE_EPOCH?: string };
-const limits = new WeakMap<object, { window: number; used: number }>();
+const budget = { window: 0, used: 0 };
+const protocolVersions = ['2025-11-25', '2025-06-18', '2025-03-26'];
 function json(value: unknown, status = 200) {
   return Response.json(value, {
     status,
     headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' },
   });
 }
-export async function readSignalObject(request: Request | Response) {
+async function readSignalObject(request: Request | Response) {
   if (
     !request.headers.get('content-type')?.startsWith('application/json') ||
     Number(request.headers.get('content-length')) > 8192
@@ -55,9 +51,20 @@ export async function readSignalObject(request: Request | Response) {
     throw new SignalError('invalid_request');
   }
 }
-export const tools = ['check_reports', 'report_failure', 'report_recovery'].map((name) => ({
+const tools = ['check_reports', 'report_failure', 'report_recovery'].map((name) => ({
   name,
+  annotations: {
+    readOnlyHint: name === 'check_reports',
+    destructiveHint: false,
+    idempotentHint: name === 'check_reports',
+    openWorldHint: true,
+  },
   description:
+    (name === 'check_reports'
+      ? 'Check matching reports. '
+      : name === 'report_failure'
+        ? 'Record an observed GitHub HTTPS push HTTP 502/503/504 failure. '
+        : 'Record observed success matching a previously reported GitHub HTTPS push failure. ') +
     'Return unverified report counts for an exact cohort. Counts are not independent people or confirmed outages. Never send diagnostics, URLs, names, or account details.',
   inputSchema: {
     type: 'object',
@@ -90,7 +97,6 @@ export async function handle(
   request: Request,
   env: Environment,
   now = Date.now(),
-  backend?: Backend,
 ): Promise<Response> {
   let rpcId: unknown = null,
     rpc = false,
@@ -98,22 +104,20 @@ export async function handle(
   try {
     // Early isolate-local admission control bounds parsing and database access.
     // Platform-wide read/traffic ceilings are a separate launch gate.
-    const budget = limits.get(env) ?? { window: now, used: 0 };
-    if (now - budget.window >= 60_000) {
+    const url = new URL(request.url);
+    rpc = url.pathname === '/mcp';
+    if (now < budget.window || now - budget.window >= 60_000) {
       budget.window = now;
       budget.used = 0;
     }
-    limits.set(env, budget);
     if (++budget.used > 120) throw new SignalError('rate_limited', 429);
-    const url = new URL(request.url);
-    rpc = url.pathname === '/mcp';
     const origin = request.headers.get('origin');
     if (origin && origin !== url.origin) return json({ error: 'invalid_origin' }, 403);
     if (request.method !== 'POST')
       return new Response(null, { status: 405, headers: { Allow: 'POST' } });
     if (url.search) throw new SignalError('invalid_request');
     const version = request.headers.get('MCP-Protocol-Version');
-    if (rpc && version && !['2025-11-25', '2025-03-26'].includes(version))
+    if (rpc && version && !protocolVersions.includes(version))
       throw new SignalError('invalid_request');
     const data = await readSignalObject(request);
     let action = url.pathname.split('/').pop(),
@@ -128,11 +132,13 @@ export async function handle(
       if (!validId) throw new SignalError('invalid_request');
       rpcId = data.id;
       if (data.method === 'initialize') {
+        const requested = object(data.params).protocolVersion;
+        if (typeof requested !== 'string') throw new SignalError('invalid_request');
         return json({
           jsonrpc: '2.0',
           id: rpcId,
           result: {
-            protocolVersion: '2025-11-25',
+            protocolVersion: protocolVersions.includes(requested) ? requested : protocolVersions[0],
             capabilities: { tools: {} },
             serverInfo: { name: 'agent-signal', version: '0.1.0' },
           },
@@ -155,22 +161,19 @@ export async function handle(
       args = object(params.arguments);
     } else if (!['/api/v1/check', '/api/v1/failure', '/api/v1/recovery'].includes(url.pathname))
       throw new SignalError('invalid_request');
-    if ((!env.DB && !backend) || env.REPORTING_ENABLED !== 'true')
-      throw new SignalError('unavailable', 503);
-    const store = env.DB ? new Store(env.DB, env.STATE_EPOCH) : undefined;
+    if (!env.DB || env.REPORTING_ENABLED !== 'true') throw new SignalError('unavailable', 503);
+    const store = new Store(env.DB!, env.STATE_EPOCH);
     let counts;
     if (action === 'check') {
       const value = cohort(args.cohort);
-      counts = backend ? await backend.check(value, now) : await store!.check(value, now);
+      counts = await store.check(value, now);
     } else if (action === 'failure' || action === 'recovery') {
       const token = rpc
         ? args.capability
         : request.headers.get('authorization')?.replace(/^Bearer /, '');
       const value = observation(args, action),
         reporter = await identity(token, now);
-      counts = backend
-        ? await backend.report(value, token as string, now)
-        : await store!.report(value, reporter, now);
+      counts = await store.report(value, reporter, now);
     } else throw new SignalError('invalid_request');
     const answer = {
       ...result(counts, now),
@@ -179,7 +182,7 @@ export async function handle(
             backendEpoch: env.STATE_EPOCH,
             windowWarming: now < Date.parse(env.STATE_EPOCH) + WINDOW_MS,
             continuity:
-              'Backend changes can omit earlier reports. Counts rebuild over ten minutes; zero does not establish health.',
+              'Count-window resets can omit earlier reports. Counts rebuild over ten minutes; zero does not establish health.',
           }
         : {}),
     };
@@ -204,7 +207,11 @@ export async function handle(
       });
     return rpc
       ? json(
-          { jsonrpc: '2.0', id: rpcId, error: { code: -32600, message: safe.code } },
+          {
+            jsonrpc: '2.0',
+            id: rpcId,
+            error: { code: safe.code === 'invalid_request' ? -32600 : -32603, message: safe.code },
+          },
           safe.status,
         )
       : json({ error: safe.code }, safe.status);

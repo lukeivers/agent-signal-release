@@ -4,7 +4,7 @@ Agent Signal is an early, single-maintainer experiment. Luke Ivers maintains it;
 
 ## Set up and verify
 
-Use Node 22.23.2 or later within Node 22, Python 3.10 or later, Git, and ShellCheck 0.9 or later. On macOS, install ShellCheck with `brew install shellcheck`; on Debian/Ubuntu use `sudo apt-get install shellcheck`. No global DevKit installation is needed.
+Use Node 22.13 or newer, Python 3.10+, and Git. No global DevKit installation is needed.
 
 ```sh
 npm ci
@@ -21,3 +21,9 @@ Use a branch and a pull request. Explain the user-visible outcome, relevant chec
 Use synthetic examples in issues and tests. A sanitized error category, version, platform and minimal reproduction are enough to start. Do not paste commands, tool transcripts, headers, bearer capabilities, private repository names or state files. Follow [SECURITY.md](SECURITY.md) for vulnerabilities. AI-assisted contributions receive the same review and evidence requirements as other contributions.
 
 Contribute only material you are authorized to share, under the project's MIT license, preserving third-party notices. No CLA, mandatory account enrollment or contribution volume is required. Maintainer review decides acceptance; passing CI does not authorize deployment or publication.
+
+## Removing and replacing subsystems
+
+Unused scaffolding, dependencies and configuration must be removed in the same change that retires a subsystem. A retained integration needs a current requirement and explicit owner agreement; speculative future use is not a reason to retain it. Trace runtime code, build/dependency tooling, environment/configuration, credentials, docs and tests. Preserve immutable migrations and dated evidence where they serve a current purpose.
+
+`npm run unused` uses pinned Knip to check unused files, exports, dependencies and unresolved imports. It is part of local/CI verification. Entrypoints in `knip.json` are actual Worker, operator/installer/test commands and client surfaces; do not use broad source globs as entrypoints to hide leftovers. Vendored DevKit tools are separately integrity-checked. A new exception must be narrow, reasoned and reviewed. The portable core scan also rejects removed framework/package imports and starter directories. Public release readiness requires these checks; do not postpone cleanup until after publication.

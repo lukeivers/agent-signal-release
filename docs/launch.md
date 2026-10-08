@@ -2,18 +2,18 @@
 
 ## Boundary
 
-Current authorization covers private GitHub source/CI, owner-private Sites synthetic deployment, and direct Cloudflare Free hosting, guarded synthetic testing and private source release preparation. Public source/service access, real reporting, social posts, outreach, directory submissions and paid activation remain separately authorized actions.
+The public source and direct Cloudflare Free pilot launched with owner approval on 2026-10-08. Public access and opt-in reporting are live. Social posts, outreach, directory submissions and paid activation still require separate authorization. Earlier gates below describe launch preparation and remain relevant to future releases.
 
 Before public source publication, complete [open-source release preparation](open-source-readiness.md).
 
 ## Launch review
 
 - Verify the stable Cloudflare address serves both REST and MCP directly against Cloudflare D1, without a Sites access credential. Publish installation instructions using only that stable address. Review [cutover](cloudflare-cutover.md).
-- Keep privacy claims limited to application projection/storage. Disclose provider ingress/security metadata, any optional Sites page traffic analytics, MCP capability transcript exposure, and backups rather than claiming those are absent.
+- Keep privacy claims limited to application projection/storage. Disclose provider ingress/security metadata, MCP capability transcript exposure, and backups rather than claiming those are absent.
 - Distinguish the configured cleanup schedule from an observed physical-deletion deadline. An explicitly disclosed limitation can accompany a consented pilot; expiry is not deletion.
 - Identify current application and hosting ceilings and test the disable mechanism. Confirm the account remains on Workers Free; quota exhaustion is accepted as temporary unavailability. A prepared migration has been superseded by direct Cloudflare hosting; no paid activation or automatic upgrade is preapproved.
 - Confirm hook trust/opt-in and the actual supported client connection. No broad ChatGPT automatic-capture or independent-outage claim.
-- Review the exact candidate SHA, updated wording and disabled-by-default flags. Then obtain authorization for public GitHub, public Sites page/stable API access, enabling reporting, and the exact one-time announcement/outreach.
+- Review the exact candidate SHA, updated wording and disabled-by-default flags. Then obtain authorization for public GitHub, stable API access, enabling reporting, and the exact one-time announcement/outreach.
 
 Hosted concurrency, cleanup-delay and load evidence can improve the release assessment, but missing evidence must be stated honestly rather than turned into unsupported performance or privacy claims.
 

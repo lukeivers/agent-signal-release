@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node /ABSOLUTE/PATH/agent-signal/clients/codex/hook.mjs",
+            "command": "AGENT_SIGNAL_ENDPOINT=https://agent-signal-701c00ab.agent-signal-701c00ab.workers.dev node /ABSOLUTE/PATH/agent-signal/clients/codex/hook.mjs",
             "timeout": 3
           }
         ]

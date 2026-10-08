@@ -8,6 +8,11 @@ updates:
     groups:
       compatible-updates:
         update-types: [minor, patch]
+  - package-ecosystem: npm
+    directory: /clients/codex
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 1
   - package-ecosystem: github-actions
     directory: /
     schedule:

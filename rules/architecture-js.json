@@ -1,25 +1,10 @@
 {
-  "components": ["app", "build", "clients", "core", "db", "lib", "scripts", "tests"],
-  "rootFiles": [
-    "cloudflare-env.d.ts",
-    "drizzle.config.ts",
-    "eslint.config.mjs",
-    "next.config.ts",
-    "postcss.config.mjs",
-    "vite.config.ts"
-  ],
-  "excluded": [
-    "tools/devkit",
-    "scripts/build-verified.sh",
-    "scripts/install-ci.sh",
-    "scripts/install-pnpm.sh",
-    "scripts/sites-env.sh"
-  ],
-  "unscannedExtensions": [".css"],
-  "aliases": {
-    "@/": ""
-  },
-  "externals": ["virtual:", "cloudflare:"],
+  "components": ["clients", "core", "scripts", "tests"],
+  "rootFiles": ["eslint.config.mjs"],
+  "excluded": ["tools/devkit"],
+  "unscannedExtensions": [],
+  "aliases": {},
+  "externals": [],
   "clones": {
     "minTokens": 50,
     "minLines": 5,

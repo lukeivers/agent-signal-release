@@ -16,7 +16,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       })
       .catch(() => {
         console.error(
-          'Installation stopped. Check the project path and existing hook configuration; no hook was trusted automatically.',
+          'Installation stopped. Install client dependencies first, then check the project path and existing hook configuration; no hook was trusted automatically.',
         );
         process.exitCode = 1;
       });

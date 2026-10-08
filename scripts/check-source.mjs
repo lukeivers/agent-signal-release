@@ -1,6 +1,7 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 const files = [];
 function walk(root) {
   for (const entry of readdirSync(root, { withFileTypes: true })) {
@@ -18,11 +19,6 @@ for (const path of files) {
   if (path.startsWith('core/') && /from ['"](?:next|node:|\.\.\/app|\.\.\/clients)/.test(source))
     throw new Error(`Nonportable core import: ${path}`);
 }
-const manifest = JSON.parse(readFileSync('.openai/hosting.json', 'utf8'));
-if (manifest.d1 !== 'DB' || !manifest.capabilities.includes('mcp'))
-  throw new Error('Missing storage/MCP manifest');
-if (!readFileSync('vite.config.ts', 'utf8').includes('observability: { enabled: false }'))
-  throw new Error('Worker observability must default off');
 const cloudflare = JSON.parse(readFileSync('wrangler.cloudflare.json', 'utf8'));
 if (
   cloudflare.observability.enabled !== false ||
@@ -33,7 +29,7 @@ if (
   cloudflare.triggers.crons[0] !== '*/5 * * * *'
 )
   throw new Error('Cloudflare template must stay closed with cleanup enabled');
-console.log('Privacy logging, architecture, and hosting manifest checks passed.');
+console.log('Privacy logging, architecture, and closed Cloudflare configuration checks passed.');
 
 const provenance = JSON.parse(readFileSync('tools/devkit/provenance.json', 'utf8'));
 for (const [file, hash] of Object.entries(provenance.sha256)) {
@@ -43,4 +39,25 @@ for (const [file, hash] of Object.entries(provenance.sha256)) {
       .digest('hex') !== hash
   )
     throw new Error(`Vendored DevKit integrity mismatch: ${file}`);
+}
+
+const retiredDirectories = ['app', 'build', 'lib', 'db', '.openai', '.sites-runtime'];
+for (const path of retiredDirectories)
+  if (existsSync(path)) throw new Error(`Retired starter directory must not be restored: ${path}`);
+const dependencies = JSON.parse(readFileSync('package.json', 'utf8'));
+const retiredPackages =
+  /^(next|react|react-dom|react-server-dom-webpack|vinext|vite|drizzle-kit|drizzle-orm|tailwindcss|raw-body|json-rpc-2.0|@openai\/sites|@cloudflare\/vite-plugin|@vitejs\/|@tailwindcss\/)/;
+for (const name of Object.keys({ ...dependencies.dependencies, ...dependencies.devDependencies }))
+  if (retiredPackages.test(name))
+    throw new Error(`Retired framework dependency must not be restored: ${name}`);
+
+const tracked = spawnSync('git', ['ls-files', '-z'], { encoding: 'utf8' });
+if (tracked.status !== 0) throw new Error('Tracked artifact inventory unavailable');
+for (const path of tracked.stdout.split('\0')) {
+  if (
+    /(?:^|\/)(?:node_modules|\.sites-runtime|\.wrangler|\.cloudflare|_cacache)(?:\/|$)|\.log$/.test(
+      path,
+    )
+  )
+    throw new Error('Generated caches, runtime state and logs must not be tracked');
 }
