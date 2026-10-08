@@ -10,11 +10,6 @@ import {
 } from './contract.ts';
 import { Store } from './store.ts';
 import type { Database } from './store.ts';
-import type { Aggregate, Cohort, Observation } from './contract.ts';
-export interface Backend {
-  check(value: Cohort, now: number): Promise<Aggregate>;
-  report(value: Observation, capability: string, now: number): Promise<Aggregate>;
-}
 type Environment = { DB?: Database; REPORTING_ENABLED?: string; STATE_EPOCH?: string };
 const budget = { window: 0, used: 0 };
 const protocolVersions = ['2025-11-25', '2025-06-18', '2025-03-26'];
@@ -24,7 +19,7 @@ function json(value: unknown, status = 200) {
     headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' },
   });
 }
-export async function readSignalObject(request: Request | Response) {
+async function readSignalObject(request: Request | Response) {
   if (
     !request.headers.get('content-type')?.startsWith('application/json') ||
     Number(request.headers.get('content-length')) > 8192
@@ -56,7 +51,7 @@ export async function readSignalObject(request: Request | Response) {
     throw new SignalError('invalid_request');
   }
 }
-export const tools = ['check_reports', 'report_failure', 'report_recovery'].map((name) => ({
+const tools = ['check_reports', 'report_failure', 'report_recovery'].map((name) => ({
   name,
   annotations: {
     readOnlyHint: name === 'check_reports',
@@ -102,7 +97,6 @@ export async function handle(
   request: Request,
   env: Environment,
   now = Date.now(),
-  backend?: Backend,
 ): Promise<Response> {
   let rpcId: unknown = null,
     rpc = false,
@@ -167,22 +161,19 @@ export async function handle(
       args = object(params.arguments);
     } else if (!['/api/v1/check', '/api/v1/failure', '/api/v1/recovery'].includes(url.pathname))
       throw new SignalError('invalid_request');
-    if ((!env.DB && !backend) || env.REPORTING_ENABLED !== 'true')
-      throw new SignalError('unavailable', 503);
-    const store = env.DB ? new Store(env.DB, env.STATE_EPOCH) : undefined;
+    if (!env.DB || env.REPORTING_ENABLED !== 'true') throw new SignalError('unavailable', 503);
+    const store = new Store(env.DB!, env.STATE_EPOCH);
     let counts;
     if (action === 'check') {
       const value = cohort(args.cohort);
-      counts = backend ? await backend.check(value, now) : await store!.check(value, now);
+      counts = await store.check(value, now);
     } else if (action === 'failure' || action === 'recovery') {
       const token = rpc
         ? args.capability
         : request.headers.get('authorization')?.replace(/^Bearer /, '');
       const value = observation(args, action),
         reporter = await identity(token, now);
-      counts = backend
-        ? await backend.report(value, token as string, now)
-        : await store!.report(value, reporter, now);
+      counts = await store.report(value, reporter, now);
     } else throw new SignalError('invalid_request');
     const answer = {
       ...result(counts, now),
@@ -191,7 +182,7 @@ export async function handle(
             backendEpoch: env.STATE_EPOCH,
             windowWarming: now < Date.parse(env.STATE_EPOCH) + WINDOW_MS,
             continuity:
-              'Backend changes can omit earlier reports. Counts rebuild over ten minutes; zero does not establish health.',
+              'Count-window resets can omit earlier reports. Counts rebuild over ten minutes; zero does not establish health.',
           }
         : {}),
     };

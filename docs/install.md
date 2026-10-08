@@ -26,4 +26,4 @@ Remove only this hook entry and optional skill to uninstall. Delete its private 
 
 Local development only: `AGENT_SIGNAL_ALLOW_LOOPBACK=1` permits a 127.0.0.1/localhost HTTP origin. Never use this for a public endpoint. Unsupported surfaces must explicitly call MCP tools or integrate a vetted adapter; do not advertise automatic ChatGPT-wide observation.
 
-Public release instructions must use that same verified origin for REST and MCP. Do not install against the Sites-generated API/MCP address: its private plugin connection has different access controls and does not follow a Cloudflare cutover. A supported MCP client may explicitly connect to `/mcp` on the stable origin; this does not imply a directory-listed ChatGPT plugin or automatic capture. See [migration readiness](cloudflare-cutover.md).
+Public integrations use REST and MCP at the same verified Cloudflare origin. A supported MCP client may connect to `/mcp`; this does not imply a directory listing or automatic capture. See [hosting](cloudflare-cutover.md).

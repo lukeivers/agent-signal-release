@@ -5,37 +5,32 @@ const identifiers = {
   account: 'a'.repeat(32),
   database: '12345678-1234-1234-1234-123456789012',
   name: 'signal-test',
-  origin: 'https://synthetic.chatgpt.site/',
 };
 
-test('deployment preserves the stable name, safety switches and epoch on retries; public reverse cutover is blocked', () => {
-  const first = deploymentConfig(identifiers, undefined, 'sites');
+test('direct deployment preserves identifiers, closed defaults and an existing count window', () => {
+  const first = deploymentConfig(identifiers, undefined);
   assert.equal(first.vars.PUBLIC_ENABLED, 'false');
   assert.equal(first.vars.REPORTING_ENABLED, 'false');
   assert.equal(first.observability.enabled, false);
   assert.deepEqual(first.triggers.crons, ['*/5 * * * *']);
-  assert.equal(
-    deploymentConfig(identifiers, first, 'sites').vars.STATE_EPOCH,
-    first.vars.STATE_EPOCH,
-  );
   first.vars.PUBLIC_ENABLED = 'true';
   first.vars.REPORTING_ENABLED = 'true';
-  first.vars.STATE_EPOCH = '2026-10-07T00:00:00.000Z';
-  const next = deploymentConfig(identifiers, first, 'cloudflare');
+  const next = deploymentConfig(identifiers, first);
   assert.equal(next.name, first.name);
   assert.equal(next.d1_databases[0].database_id, identifiers.database);
-  assert.equal(next.vars.PUBLIC_ENABLED, 'true');
-  assert.equal(next.vars.REPORTING_ENABLED, 'true');
-  assert.notEqual(next.vars.STATE_EPOCH, first.vars.STATE_EPOCH);
-  assert.throws(() => deploymentConfig(identifiers, next, 'sites'), /Reverse cutover/);
+  assert.deepEqual(next.vars, first.vars);
   assert.throws(
-    () => deploymentConfig({ ...identifiers, origin: 'https://attacker.example' }, first, 'sites'),
-    /Sites/,
+    () =>
+      deploymentConfig(identifiers, {
+        ...first,
+        vars: { ...first.vars, BACKEND_MODE: 'unsupported' },
+      }),
+    /Only direct/,
   );
 });
 
 test('live verification rejects stale or unavailable deployments without writing a report', async () => {
-  const config = deploymentConfig(identifiers, undefined, 'cloudflare');
+  const config = deploymentConfig(identifiers, undefined);
   const endpoint = 'https://signal-test.synthetic.workers.dev/';
   await assert.rejects(verifyDeployment(endpoint, config, undefined), /PRIVATE_ACCESS_TOKEN/);
   const send: typeof fetch = async (input, init) => {
@@ -76,18 +71,11 @@ test('live verification rejects stale or unavailable deployments without writing
   );
 });
 
-test('direct deployment needs no Sites origin and removes an inherited Sites dependency', () => {
-  const direct = {
-    account: identifiers.account,
-    database: identifiers.database,
-    name: identifiers.name,
-  };
-  const first = deploymentConfig(direct, undefined);
-  assert.equal(first.vars.BACKEND_MODE, 'cloudflare');
-  assert.equal('SITES_ORIGIN' in first.vars, false);
-  const legacy = deploymentConfig(identifiers, undefined, 'sites');
-  const next = deploymentConfig(direct, legacy);
-  assert.equal(next.vars.BACKEND_MODE, 'cloudflare');
-  assert.equal('SITES_ORIGIN' in next.vars, false);
-  assert.equal(next.vars.PUBLIC_ENABLED, 'false');
+test('generated deployment variables project away unexpected legacy metadata', () => {
+  const first = deploymentConfig(identifiers, undefined);
+  const next = deploymentConfig(identifiers, {
+    ...first,
+    vars: { ...first.vars, PRIVATE_EXTRA: 'discard' },
+  });
+  assert.equal('PRIVATE_EXTRA' in next.vars, false);
 });

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Remove Sites frontend/connectors, legacy backend, project metadata and framework tooling; retain only the direct Cloudflare Worker and opt-in clients.
+- Require pinned Knip unused-code/dependency checks and direct Worker/D1 smoke in CI; remove obsolete advisory and architecture exceptions.
+
 - Quiet hook startup even when dependencies or its pinned executable disappear; dependency preflight and atomic installation with collision-safe backups.
 - Correct MCP version negotiation, clearer tool descriptions/annotations and protocol-shaped admission errors.
 - Reporter-first budget admission, isolate-scoped request guard, deployment source guard, and client dependency updates.

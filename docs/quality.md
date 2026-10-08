@@ -4,23 +4,23 @@
 
 ## Architecture and duplication
 
-`rules/architecture-js.json` includes every tracked or new unignored JS/TS source under app, build, clients, core, db, lib, scripts and tests, plus root configuration/declaration files. Default clone thresholds are 50 tokens, five lines and 12 distinct tokens, normalizing identifiers and literals. Duplicate imports and function-free literal data are not clone findings. The scan also checks imports, cycles, callable names and selected owners for cohort validation, capability validation and storage. Named owners catch reused declarations, not differently named semantic copies; the privacy logging and portable-core checks remain separate.
+`rules/architecture-js.json` includes every tracked or new unignored JS/TS source under clients, core, scripts and tests, plus root configuration/declaration files. Default clone thresholds are 50 tokens, five lines and 12 distinct tokens, normalizing identifiers and literals. Duplicate imports and function-free literal data are not clone findings. The scan also checks imports, cycles, callable names and selected owners for cohort validation, capability validation and storage. Named owners catch reused declarations, not differently named semantic copies; the privacy logging and portable-core checks remain separate.
 
 Reviewed exclusions:
 
 - Vendored DevKit engines are unchanged tooling, verified against their recorded hashes; their own internal implementation is outside this application's architecture scan.
-- The four Sites shell scripts are covered by ShellCheck instead of the JS parser. Three SC2016 annotations in the pnpm helper preserve intended child-shell arguments or pnpm environment placeholders; they do not suppress other shell findings.
-- CSS is formatting-reviewed, built and visually reviewed, not parsed by the JS architecture engine. Generated output and ignored starter samples are not shipped project source.
-- `cloudflare:` and `virtual:` are explicit hosting/runtime import namespaces. Ordinary undeclared packages still fail.
-
-There is one narrowly recorded boundary finding: `scripts/run-framework.mjs` dynamically imports a URL selected only from two fixed, installed CLI paths according to the local execution profile. DevKit cannot statically resolve that expression. It accepts no user-selected import URL. The exact expression hash/count is recorded in `rules/architecture-baseline-js.json`; edits and additional findings require review. There is no clone baseline or blanket exclusion of tests, clients or starter JS/TS code.
+  No application source directories are blanket-excluded. The removed framework launcher also removes its unresolved-import baseline; the current architecture baseline is empty. The remaining source is formatted and linted; vendored DevKit bytes are checked separately.
 
 Do not raise thresholds, omit handwritten source or grow baselines to obtain a pass. Review each finding; refactor shared behavior only when the responsibilities actually belong together. An intentional exception needs a source-controlled reason. DevKit's baseline update normally only shrinks debt; growth is an explicit reviewed operation.
 
 ## Lint, types and tests
 
-ESLint applies Next.js core-web-vitals/TypeScript rules to application, client, core and script source and fails on any warning. Retained Sites build plugins are excluded from ESLint and formatting, but included in DevKit architecture scanning and TypeScript checks. Retained starter lib/scripts/build files have formatting exclusions; modified operator scripts are formatted explicitly. Vendored DevKit engines are outside ESLint/Prettier to preserve their bytes. Starter UI exceptions apply only to unused, ignored registry components; they are not exemptions for the observation code. TypeScript checks production TS and a separate tests configuration; JavaScript adapters are linted and behavior-tested, not claimed to have full `checkJs` coverage.
+ESLint recommended JavaScript and TypeScript rules apply to all remaining handwritten source with zero warnings. TypeScript checks the portable production core and a separate test configuration. JavaScript clients/scripts are linted and behavior-tested; no full checkJs coverage is claimed. Only unchanged vendored DevKit engines are excluded from formatting/lint to preserve provenance.
 
 The skipped-test gate has an empty register. `.only` always fails; skips/todos require explicit reasoned registration. This scanner uses documented lexical heuristics and cannot prove no dynamic skip exists. Behavioral tests and the local built-Worker smoke remain necessary.
 
 CI has read-only repository permissions, pinned Actions commits, no deployment secrets or publication step, and does not persist checkout credentials. Secret scanning is redacted. `npm run audit:dependencies` requires network access and a current advisory database; CI runs it separately from offline verification. It fails any advisory outside exact, expiring reviewed exceptions; see the release checklist for their scope. Passing these checks is evidence, not a security certification.
+
+## Unused source and retired integrations
+
+Pinned Knip checks unused source, exports, dependencies and unresolved imports with explicitly listed real entrypoints. `npm run unused` is required by `npm run verify` and CI. See `knip.json`; do not declare every source file an entrypoint. The vendored DevKit engines remain hash-checked and are recognized as executable tooling entrypoints. `scripts/check-source.mjs` also rejects retired framework dependencies and starter directories. These checks do not prove every line serves a product requirement; subsystem retirement still requires explicit review of code, configuration, dependencies, credentials, docs and tests.

@@ -38,3 +38,7 @@ Two underlying advisories remain, with exact package versions and paths recorded
 - [nested esbuild development-server exposure](https://github.com/advisories/GHSA-67mh-4wv8-2f99): Drizzle's legacy configuration loader pins esbuild 0.18.20. Its use is transformation, not the affected serve API; it is not in the Worker bundle. Do not expose a development server from that nested dependency. Revisit on Drizzle/helper upgrades or any serving use.
 
 No `npm audit fix --force`, forced downgrade or peer-dependency bypass is used. These scoped exceptions remain documented for the pilot; recheck them and the full advisory inventory at public release.
+
+## Standalone source cleanup — 2026-10-08
+
+The Sites/framework prototype and legacy routing adapter have been removed from current source, along with their build dependencies and private project metadata. The project now builds only the direct Cloudflare Worker. Handwritten source has no broad lint/format exclusions; the architecture baseline is empty. Required Knip checks cover unused files/exports/dependencies. Historical dependency discussion above describes the old lockfile; current advisory results are authoritative. Removed Drizzle tooling also removes its nested-esbuild advisory exception.

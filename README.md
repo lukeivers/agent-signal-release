@@ -1,26 +1,21 @@
 # Agent Signal
 
-A small, open-source MIT experiment: an agent experiencing a GitHub HTTPS push server error can report an allowlisted category and receive counts of matching recent unresolved reports. Agents retain their own decision rules.
+An MIT-licensed, experimental opt-in pilot for agents encountering GitHub HTTPS push HTTP 502/503/504 errors. Agents share category-only observations and receive recent matching unresolved counts; they keep their own retry and permission rules. Counts are unverified, forgeable and potentially duplicated. Zero reports does not establish health.
 
-**Experimental opt-in pilot for Codex GitHub HTTPS pushes.** The public pilot is live; self-hosting templates remain disabled by default. Hosting uses Cloudflare Free and may become unavailable at its limits. Counts are unverified; this is not a confirmed-outage feed or automatic global integration. Start with the [pinned installation instructions](docs/install.md) and [privacy notice](docs/privacy.md).
+The public reporting API runs directly on Cloudflare Workers/D1 Free, with equivalent REST and MCP operations. It may become unavailable at hosting limits. Source templates remain closed by default. The project-scoped local Codex hook needs explicit installation and trust; no automatic ChatGPT-wide observation is implied.
 
-The first version includes a portable TypeScript core, D1/SQLite storage, three HTTP operations, equivalent MCP tools, an opt-in local Codex hook, and a static explanation page. Application code makes no inference calls and includes no analytics, ads, recommendations, account identifiers, or raw diagnostic storage. The reporting API uses Cloudflare directly; provider metadata and backups remain separate privacy boundaries. The private Sites prototype has its own hosting traffic analytics. See [privacy](docs/privacy.md).
+Start with [installation](docs/install.md), [privacy](docs/privacy.md), and [security reporting](SECURITY.md). No repository URLs, command output or account identifiers belong in reports. Provider ingress metadata and database backups remain separate boundaries.
 
 ## Develop
 
-Node 22.13 or newer (CI uses 22.23.2), Python 3.10+, Git and ShellCheck 0.9+. `npm ci`, `npm run verify`, `npm run build`. `npm start` runs the built Worker locally on loopback. Apply `drizzle/0000_new_ben_urich.sql` to local D1 first; see [verification](docs/verification.md). Enable `REPORTING_ENABLED=true` only in a local environment or an explicitly authorized hosted test. Without it, observation operations return `unavailable`.
+Node 22.13 or newer (CI uses 22.23.2), Python 3.10+, and Git. Run `npm ci`, `npm ci --prefix clients/codex --ignore-scripts`, then `npm run verify` and `npm run test:worker`. The latter builds the actual direct Worker and checks a disposable local Miniflare/D1 instance; it never sends hosted reports. `npm run build` only bundles locally and never deploys. `npm run dev` starts the closed Worker on loopback; apply the immutable SQL migration and explicitly enable local testing as described in [verification](docs/verification.md).
 
-- [Final plan and launch boundary](docs/plan.md)
 - [API and count semantics](docs/api.md)
-- [Cloudflare hosting and shutdown](docs/cloudflare-cutover.md)
-- [Privacy and residual hosting limits](docs/privacy.md)
-- [Opt-in installation](docs/install.md)
-- [Verification evidence](docs/verification.md)
-- [Launch gates and bounded distribution](docs/launch.md)
-- [Contributing and verification](CONTRIBUTING.md)
-- [Quality rules and reviewed exceptions](docs/quality.md)
-- [Open-source release preparation](docs/open-source-readiness.md)
+- [Cloudflare deployment and shutdown](docs/cloudflare-cutover.md)
+- [Quality gates](docs/quality.md)
+- [Review disposition](docs/review-2026-10-08.md)
+- [Contributing](CONTRIBUTING.md)
+- [Launch and distribution](docs/launch.md)
 - [Third-party notices](THIRD_PARTY_NOTICES.md)
-- [Security reporting](SECURITY.md)
 
-The Sites starter supplies Vinext/React hosting integration with its original plugin license retained. The observation core does not depend on Sites, React, or a model provider. A hosting adapter can be replaced without changing count semantics.
+The production core is independent of frontend frameworks and model providers. Sites code, connectors, hosting metadata and framework tooling have been removed. Historical verification records describe earlier prototypes, not current dependencies.
