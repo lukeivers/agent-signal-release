@@ -6,6 +6,7 @@
         "core/cloudflare-worker.ts",
         "scripts/cloudflare.mjs",
         "scripts/install-codex-hook.mjs",
+        "scripts/uninstall-codex-hook.mjs",
         "tests/**/*.test.ts"
       ],
       "project": ["**/*.{ts,mjs}"]
