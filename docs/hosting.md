@@ -19,3 +19,9 @@ After explicit authorization, `node scripts/cloudflare.mjs pilot-open --approved
 If CLI access/state is unavailable, disable the existing Worker's workers.dev route in the Cloudflare dashboard as an emergency availability stop, then verify the endpoint is inaccessible. Keep the Worker and D1 database so scheduled cleanup can continue. This fallback is documented, not newly rehearsed.
 
 Observability and preview URLs are disabled, cleanup is scheduled every five minutes, and provider logs/backups remain outside application projection. Free quota exhaustion is accepted as temporary unavailability. Application budgets and isolate admission do not guarantee worldwide traffic ceilings or availability.
+
+## Provider filtering and HTTP clients
+
+The free `workers.dev` address has provider filtering ahead of the Worker. A default Python `urllib` request was rejected with HTTP 403 / error 1010 while an explicitly identified request succeeded. Worker code cannot change a response rejected before invocation. The inspected Worker Settings and Domains screens expose no Browser Integrity Check control for this address; Cloudflare documents that control for [zones](https://developers.cloudflare.com/waf/tools/browser-integrity-check/).
+
+The pilot keeps free hosting and supports explicitly identified clients; see the [HTTP client guidance and tested Python example](api.md#http-client-identification). Provider settings, limits and the reporting epoch were not changed for this workaround. A future custom-domain remedy would need separate verification and approval; it is not part of the current hosting setup.

@@ -34,3 +34,9 @@ Automated installer/client tests cover configuration preservation, duplicate/sym
 The patched pilot `v0.1.0-pilot.2` was deployed from commit `57b802aaacc31f1dcc3fb67570d7f40a4124a9ec`. Wrangler reported Worker version `55517ae8-22c7-409e-a0c7-7b4ae17266a7`. Read-only REST checks matched the direct backend and existing epoch; MCP initialization echoed `2025-06-18` and listed the three tools. No reports were submitted for that deployment check. Worker secrets were empty and Wrangler was logged out afterward.
 
 Earlier consented hosted synthetic failure/recovery and scheduled-deletion checks established individual episodes, not a real outage, deletion deadline or general reliability guarantee. This is dated evidence, not live monitoring. Current source can be ahead of the deployed tag; release notes must distinguish source-only changes from deployments.
+
+## HTTP compatibility evidence — 2026-10-08
+
+The [Python example](api.md#read-only-python-example) was executed unchanged from the documentation with Python 3.9.6 and returned HTTP 200 JSON from the existing pilot. Separate read-only requests using `AgentSignal-Codex/0.1` and `AgentSignal-Operator/0.1` also returned 200 with the existing epoch; an identified malformed check returned 400, and identified MCP initialization negotiated `2025-06-18`. No failure/recovery reports were submitted and no Worker configuration was changed.
+
+Python's default `urllib` header still received HTTP 403 with plain-text `error code: 1010`. The accepted free-hosting approach supports explicitly identified clients; it does not remove this provider restriction or establish compatibility for every client/network. Local hook tests capture the real outgoing header for both failure and recovery, alongside the existing payload privacy checks. Operator tests verify its fixed header without sending reports.

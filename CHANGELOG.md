@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.0-pilot.5 — 2026-10-08
+
+- Identify hook and operator HTTP requests with fixed, non-identifying User-Agent headers. Document and verify the Python header workaround for Cloudflare error 1010; retain the free address and provider filtering.
+
 ## v0.1.0-pilot.4 — 2026-10-08
 
 - Add preview-and-confirm uninstall scripts and a scoped project-to-user transition sharing the same removal logic. Preserve unrelated hooks and exact backups; refuse changed/unsafe configurations and piped approval.

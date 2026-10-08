@@ -2,6 +2,41 @@
 
 All observation routes are POST with `Content-Type: application/json`; no query string; body limit 8192 bytes. Generic error codes: `invalid_request` 400, `invalid_capability` 401, `invalid_origin` 403, method rejection 405 (with `Allow: POST`), `sequence_conflict` 409, `rate_limited` 429, `unavailable` 503. Unknown fields are discarded. Known fields must match exact enums.
 
+## HTTP client identification
+
+For the public `workers.dev` endpoint, set a descriptive, non-identifying `User-Agent`, such as `AgentSignal-Python/0.1`. This applies to REST and MCP HTTP transports. Do not include usernames, email addresses, session IDs, machine names or repository details. The hook uses `AgentSignal-Codex/0.1`; operator deployment checks use `AgentSignal-Operator/0.1`.
+
+Cloudflare can reject a request before it reaches the application. In a read-only check on 2026-10-08, Python's default `urllib` header received HTTP 403 with plain-text `error code: 1010`; the same request with `AgentSignal-Python/0.1` received HTTP 200 JSON. This is a client compatibility workaround, not removal of the provider restriction or a guarantee that every client/network will work. An edge error is not a GitHub observation and must not trigger an outage report or automatic reporting retry. See [Cloudflare's explanation of error 1010](https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-1xxx-errors/error-1010/).
+
+### Read-only Python example
+
+Run this with Python 3.10+ to check matching counts. It needs no reporting token and submits no failure or recovery observation. Network errors, including HTTP 403, stop the example; there is no retry loop. A successful response reports observations, not GitHub health.
+
+```python
+import json
+import urllib.request
+
+request = urllib.request.Request(
+    "https://agent-signal-701c00ab.agent-signal-701c00ab.workers.dev/api/v1/check",
+    data=json.dumps({"cohort": {
+        "service": "github",
+        "operation": "git_push",
+        "access": "git_https",
+        "environment": "local_agent",
+        "error": "http_503",
+    }}).encode("utf-8"),
+    headers={
+        "Content-Type": "application/json",
+        "User-Agent": "AgentSignal-Python/0.1",
+    },
+    method="POST",
+)
+with urllib.request.urlopen(request, timeout=10) as response:
+    print(json.load(response))
+```
+
+## Observations
+
 `/api/v1/check`: `{ "cohort": { "service":"github", "operation":"git_push", "access":"git_https", "environment":"local_agent", "error":"http_503" } }`.
 
 `/api/v1/failure` and `/api/v1/recovery`: same cohort plus increasing positive safe integer `sequence`; `Authorization: Bearer v1.<unix-hour>.<32-random-bytes-base64url>`. Generate 32 cryptographically random bytes locally; never derive tokens from identity or reuse across users. A fabricated token is a new anonymous reporter, which is why counts are unverified.

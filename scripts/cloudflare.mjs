@@ -115,7 +115,10 @@ export async function verifyDeployment(
     throw new Error(
       'Private rehearsal verification requires PRIVATE_ACCESS_TOKEN in the process environment',
     );
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = {
+    'Content-Type': 'application/json',
+    'User-Agent': 'AgentSignal-Operator/0.1',
+  };
   if (config.vars.PUBLIC_ENABLED !== 'true') headers['X-Agent-Signal-Private'] = privateToken;
   let consecutive = 0;
   for (let attempt = 0; attempt < attempts; attempt++) {
