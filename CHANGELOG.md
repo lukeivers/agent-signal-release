@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.1.0-pilot.2 — 2026-10-08
 
 - Remove Sites frontend/connectors, legacy backend, project metadata and framework tooling; retain only the direct Cloudflare Worker and opt-in clients.
 - Require pinned Knip unused-code/dependency checks and direct Worker/D1 smoke in CI; remove obsolete advisory and architecture exceptions.

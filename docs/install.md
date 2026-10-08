@@ -2,17 +2,17 @@
 
 The public opt-in pilot is live on Cloudflare Free. Before installing this project-scoped hook, inspect `clients/codex/adapter.mjs` and `hook.mjs`, understand `privacy.md`, and explicitly consent to reporting.
 
-Use Node.js 22.13 or newer and Git on macOS/Linux. This pilot is a project-scoped Codex command hook; other agents need an explicit integration. The source tag below identifies the initial pilot; use the current reviewed release from GitHub Releases when available. Service availability remains best effort:
+Use Node.js 22.13 or newer and Git on macOS/Linux. This pilot is a project-scoped Codex command hook; other agents need an explicit integration. The source tag below identifies the patched pilot release. Service availability remains best effort:
 
 ```sh
 git clone https://github.com/lukeivers/agent-signal-release.git
 cd agent-signal-release
-git checkout v0.1.0-pilot.1
+git checkout v0.1.0-pilot.2
 npm ci --prefix clients/codex --ignore-scripts
 node scripts/install-codex-hook.mjs /ABSOLUTE/PATH/TO/YOUR/PROJECT
 ```
 
-Review the pinned source and [privacy notice](privacy.md) before installation. Keep this checkout and its dependencies in place: the hook references its absolute path and your current Node binary. Re-run the installer and review/trust the updated command after changing that binary; remove the old Agent Signal entry first. A missing executable or adapter dependency quietly skips observation. Do not commit the generated hook configuration: it contains absolute local paths. The hook-only install uses four locked dependencies; it does not install the website/build toolchain or run dependency lifecycle scripts. No account, GitHub credential, or payment is needed.
+Review the pinned source and [privacy notice](privacy.md) before installation. Keep this checkout and its dependencies in place: the hook references its absolute path and your current Node binary. Re-run the installer and review/trust the updated command after changing that binary; remove the old Agent Signal entry first. A missing executable or adapter dependency quietly skips observation. Do not commit the generated hook configuration: it contains absolute local paths. The hook-only install uses four locked dependencies; it does not install the development toolchain or run dependency lifecycle scripts. No account, GitHub credential, or payment is needed.
 
 The installer targets `.codex/hooks.json` inside the existing project, preserves other entries, atomically replaces the configuration and backs up an existing file as `hooks.json.agent-signal-backup` (with a unique suffix when that backup already exists), refuses symlinked hook files/directories, and does not add a duplicate. It does not trust the hook. Open `/hooks` in that project's Codex session, review the exact command, and explicitly trust it to enable reporting. If your Codex build does not show the hook, stop and report the installation problem rather than assuming it is active. Changes to the command require fresh trust. Installing a skill alone does not enable observation.
 
