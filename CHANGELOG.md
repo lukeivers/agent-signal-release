@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.0-pilot.3 — 2026-10-08
+
+- Rewrite project onboarding and reconcile current installation, support, privacy and release guidance; remove obsolete prototype/planning notes and the divergent hand-edited hook example.
+- Exclude all shell redirections from the narrow push classifier, matching its documented scope.
+
 ## v0.1.0-pilot.2 — 2026-10-08
 
 - Remove Sites frontend/connectors, legacy backend, project metadata and framework tooling; retain only the direct Cloudflare Worker and opt-in clients.

@@ -1,10 +1,10 @@
 # API contract
 
-All observation routes are POST with `Content-Type: application/json`; no query string; body limit 8192 bytes. Generic error codes: `invalid_request` 400, `invalid_capability` 401, `sequence_conflict` 409, `rate_limited` 429, `unavailable` 503. Unknown fields are discarded. Known fields must match exact enums.
+All observation routes are POST with `Content-Type: application/json`; no query string; body limit 8192 bytes. Generic error codes: `invalid_request` 400, `invalid_capability` 401, `invalid_origin` 403, method rejection 405 (with `Allow: POST`), `sequence_conflict` 409, `rate_limited` 429, `unavailable` 503. Unknown fields are discarded. Known fields must match exact enums.
 
 `/api/v1/check`: `{ "cohort": { "service":"github", "operation":"git_push", "access":"git_https", "environment":"local_agent", "error":"http_503" } }`.
 
-`/api/v1/failure` and `/api/v1/recovery`: same cohort plus increasing positive safe integer `sequence`; `Authorization: Bearer v1.<unix-hour>.<32-random-bytes-base 64url>`. Generate 32 cryptographically random bytes locally; never derive tokens from identity or reuse across users. A fabricated token is a new anonymous reporter, which is why counts are unverified.
+`/api/v1/failure` and `/api/v1/recovery`: same cohort plus increasing positive safe integer `sequence`; `Authorization: Bearer v1.<unix-hour>.<32-random-bytes-base64url>`. Generate 32 cryptographically random bytes locally; never derive tokens from identity or reuse across users. A fabricated token is a new anonymous reporter, which is why counts are unverified.
 
 Response fields: `outstanding`, `recovered`, `otherOutstanding`, `windowSeconds` 600, server `asOf`, `evidence:"unverified_reports"`, `population:"reporter_capabilities"`, fixed interpretation caveat. Checks return null for otherOutstanding because they are not tied to a reporter. Failure/recovery return count excluding the calling capability. Matching uses the entire cohort, including error category and environment. Counts across cohorts must not be added to claim unique sessions.
 
@@ -16,8 +16,8 @@ Atomic D1 batch admission allows at most 10000 reporter-admitted report attempts
 
 ## MCP
 
-POST `/mcp`: JSON-RPC initialize, initialized notification, ping, tools/list, tools/call. Stateless JSON responses, no SSE or event subscriptions. Tools `check_reports`, `report_failure`, `report_recovery`; reporting capability is a sensitive tool argument and must receive the same host-log scrutiny as Authorization headers. Report tools require cohort, capability, sequence. The response includes structuredContent and the same counts as text. Public integrations use the stable Cloudflare MCP endpoint. This is a versioned minimal MCP surface, not a directory-ready published plugin.
+POST `/mcp`: JSON-RPC initialize, initialized notification, ping, tools/list, tools/call. Stateless JSON responses, no SSE or event subscriptions. Supported protocol versions are `2025-11-25`, `2025-06-18` and `2025-03-26`; initialize negotiates one of those versions. Tools `check_reports`, `report_failure`, `report_recovery`; reporting capability is a sensitive tool argument and must receive the same host-log scrutiny as Authorization headers. Report tools require cohort, capability, sequence. The response includes structuredContent and the same counts as text. Public integrations use the stable Cloudflare MCP endpoint. This is a versioned minimal MCP surface, not a directory-ready published plugin.
 
 ## Backend continuity
 
-The stable Cloudflare gateway additionally returns `backendEpoch`, `windowWarming`, and a fixed continuity caveat in REST results and MCP structured/text content. Resetting the epoch starts a new count window; old observations and recovery watermarks are not copied. Counts can temporarily understate recent reports while rebuilding. Clients must not interpret zero after a change as health. See [cutover](cloudflare-cutover.md).
+The stable Cloudflare gateway additionally returns `backendEpoch`, `windowWarming`, and a fixed continuity caveat in REST results and MCP structured/text content. Resetting the epoch starts a new count window; old observations and recovery watermarks are not copied. Counts can temporarily understate recent reports while rebuilding. Clients must not interpret zero after a change as health. See [hosting](hosting.md).

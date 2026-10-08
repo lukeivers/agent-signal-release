@@ -1,29 +1,75 @@
-# Opt-in integration
+# Install Agent Signal for a local Codex project
 
-The public opt-in pilot is live on Cloudflare Free. Before installing this project-scoped hook, inspect `clients/codex/adapter.mjs` and `hook.mjs`, understand `privacy.md`, and explicitly consent to reporting.
+After setup, Codex can automatically share a minimal report when a supported GitHub HTTPS push fails with HTTP 502, 503 or 504, then see how many other matching reports are outstanding. Successful matching pushes can report recovery.
 
-Use Node.js 22.13 or newer and Git on macOS/Linux. This pilot is a project-scoped Codex command hook; other agents need an explicit integration. The source tag below identifies the patched pilot release. Service availability remains best effort:
+This is an early, opt-in pilot. It works through a **local Codex hook**, installed separately for each project. There is no directory-listed plugin yet, and these steps do not enable automatic reporting in ChatGPT web, cloud sessions, Claude Code or other agents.
+
+## Before you start
+
+You need macOS or Linux, Git, Node.js **22.13 or newer**, and a local Codex session that supports `/hooks`. Check your tools in a terminal:
 
 ```sh
-git clone https://github.com/lukeivers/agent-signal-release.git
-cd agent-signal-release
-git checkout v0.1.0-pilot.2
-npm ci --prefix clients/codex --ignore-scripts
-node scripts/install-codex-hook.mjs /ABSOLUTE/PATH/TO/YOUR/PROJECT
+node --version
+git --version
 ```
 
-Review the pinned source and [privacy notice](privacy.md) before installation. Keep this checkout and its dependencies in place: the hook references its absolute path and your current Node binary. Re-run the installer and review/trust the updated command after changing that binary; remove the old Agent Signal entry first. A missing executable or adapter dependency quietly skips observation. Do not commit the generated hook configuration: it contains absolute local paths. The hook-only install uses four locked dependencies; it does not install the development toolchain or run dependency lifecycle scripts. No account, GitHub credential, or payment is needed.
+No Agent Signal account, payment or GitHub token is needed. The hook reads tool output locally and sends only fixed categories, a sequence number and a random reporting token. It does not send code, repository names or command output. Cloudflare can still receive network metadata; read the [privacy notice](privacy.md) before opting in.
 
-The installer targets `.codex/hooks.json` inside the existing project, preserves other entries, atomically replaces the configuration and backs up an existing file as `hooks.json.agent-signal-backup` (with a unique suffix when that backup already exists), refuses symlinked hook files/directories, and does not add a duplicate. It does not trust the hook. Open `/hooks` in that project's Codex session, review the exact command, and explicitly trust it to enable reporting. If your Codex build does not show the hook, stop and report the installation problem rather than assuming it is active. Changes to the command require fresh trust. Installing a skill alone does not enable observation.
+## 1. Download the reviewed pilot
 
-The installer uses `https://agent-signal-701c00ab.agent-signal-701c00ab.workers.dev`. An optional second argument selects another reviewed root HTTPS origin. Optionally set `AGENT_SIGNAL_STATE_DIR` to an absolute private directory; the default is `~/.local/state/agent-signal`.
+Run these commands from a folder where you can keep Agent Signal permanently, outside the project you want to observe:
 
-The hook matches `Bash` PostToolUse. Dry-run flags are excluded. Initial classifier recognizes a plain `git push` command and output with a GitHub HTTPS URL plus the exact Git server error phrase for 502/503/504. It skips ambiguous or unrelated commands, permission errors, SSH pushes, connectors, compound commands such as `cd project && git push`, redirected commands such as `git push 2>&1`, and ambiguous output. When the client supplies plain output without exit metadata, the fatal Git URL/server-error message establishes failure; recovery additionally requires a clean successful commit-range ref-update line. With exit metadata, recovery requires exit 0 and a corresponding `To https://github.com/...` line. Up-to-date output without a destination cannot close a report; it ages out. This deliberately narrow coverage avoids falsely reporting user-level errors.
+```sh
+git clone --branch v0.1.0-pilot.3 --depth 1 https://github.com/lukeivers/agent-signal-release.git
+cd agent-signal-release
+npm ci --prefix clients/codex --ignore-scripts
+```
 
-Reporting is synchronous with an 800 ms per-request timeout; at most three recovery categories may be sent. The 3-second hook timeout and fail-open adapter prevent observer failure from blocking the task. Failed requests trigger a local cooldown from one second up to one minute, reset by a valid successful acknowledgement. Only later matching tool events can retry; there are no background retries. No model inference is needed. Aggregate context is projected to bounded integers and fixed local wording, so endpoint content cannot inject instructions.
+Git may mention a detached HEAD; that is expected for a pinned release. This installs the small hook dependency tree. You do not need the service's development dependencies. Keep this folder in place: the hook will refer to it by its full path.
 
-Remove only this hook entry and optional skill to uninstall. Delete its private state directory when safe to do so. No persistent polling or automation is installed.
+Already have an Agent Signal installation? Use the [update instructions](codex-hook.md#update-an-existing-installation) instead of cloning over it.
 
-Local development only: `AGENT_SIGNAL_ALLOW_LOOPBACK=1` permits a 127.0.0.1/localhost HTTP origin. Never use this for a public endpoint. Unsupported surfaces must explicitly call MCP tools or integrate a vetted adapter; do not advertise automatic ChatGPT-wide observation.
+## 2. Choose the project and prepare its hook
 
-Public integrations use REST and MCP at the same verified Cloudflare origin. A supported MCP client may connect to `/mcp`; this does not imply a directory listing or automatic capture. See [hosting](cloudflare-cutover.md).
+Set `PROJECT` to the full path of the existing project where you use Codex. Replace the example between the quotes; keep the quotes if the path contains spaces.
+
+```sh
+PROJECT="/absolute/path/to/your/project"
+node scripts/install-codex-hook.mjs "$PROJECT"
+```
+
+For example, if your project is in `~/Projects/my-app`, use `PROJECT="$HOME/Projects/my-app"`.
+
+The installer should print `Prepared: …/.codex/hooks.json` and tell you to review the hook. It preserves other hook entries and backs up any existing file. **Reporting is not enabled by installation alone.** Do not commit the generated hook file or backup: they contain local paths.
+
+## 3. Review and enable it in Codex
+
+Open a local Codex session in the project you chose. Enter `/hooks`, find the project hook under `PostToolUse` with matcher `Bash`, and review its command. It should point to this checkout's `clients/codex/hook.mjs` and the public Agent Signal endpoint.
+
+Trust that hook only if you want this project to report. If `/hooks` is unavailable or the entry does not appear, stop and follow [troubleshooting](#troubleshooting). Do not bypass hook trust.
+
+## 4. Know what to expect
+
+When a supported push fails, the hook can add context for the agent beginning:
+
+> Agent Signal unverified matching reports in the last ten minutes: …
+
+Ordinary successful commands stay quiet. The hook recognizes plain `git push` commands with a specific GitHub HTTPS server error. SSH pushes, permission errors, compound commands such as `cd project && git push`, and redirects such as `git push 2>&1` are skipped. No matching error means no failure report; silence is not proof that reporting worked.
+
+Do not deliberately break a push or send fabricated reports to the public pilot to test setup. You can confirm the hook is visible and trusted; that establishes configuration, not successful delivery during a real failure. The service is best effort, and unavailable reporting should not block your task.
+
+## Troubleshooting
+
+| What you see                                   | What to do                                                                                                                                                                                                                             |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `node` or `git` is missing, or Node is too old | Install or update the missing tool, then restart your terminal and repeat the version check.                                                                                                                                           |
+| `Installation stopped`                         | Check that `PROJECT` exists and that step 1 completed. Existing malformed or symlinked hook configurations are refused. See the [hook reference](codex-hook.md#installation-details).                                                  |
+| An Agent Signal hook already exists            | Follow the [update instructions](codex-hook.md#update-an-existing-installation); do not add a second observer.                                                                                                                         |
+| No Agent Signal entry in `/hooks`              | Confirm you opened the same project locally and its project configuration is trusted. Restart the session if needed. Your client or managed settings may not permit local hooks; [ask for help](../SUPPORT.md) with sanitized details. |
+| The hook is trusted but stays quiet            | Normal commands, unsupported pushes and unavailable reporting are quiet. Check the limitations above; do not infer success or an outage from silence.                                                                                  |
+
+## Turn it off or remove it
+
+Disable the Agent Signal hook in `/hooks` to stop reporting. To uninstall, remove only its entry from the project's `.codex/hooks.json`, preserving other hooks. Once no project uses this checkout, you may delete it. Local state cleanup and update details are in the [hook reference](codex-hook.md).
+
+For manual checks or another integration, see the [API reference](api.md). Connecting MCP gives an agent explicit tools; it does not install an automatic observer.

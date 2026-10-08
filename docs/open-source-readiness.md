@@ -1,44 +1,39 @@
-# Open-source release preparation
+# Release checklist
 
-This is a small experimental project, not an OpenSSF-certified product. Preparation follows GitHub's repository/security guidance and relevant OpenSSF baseline controls, proportionate to one maintainer and a bounded pilot.
+Use this checklist for a concrete candidate, not as a claim that the project is certified or production-ready. [Current verification](verification.md) distinguishes local checks from dated hosted evidence.
 
-## In source
+## Review the source and documentation together
 
-- MIT license, third-party provenance and retained upstream notice.
-- README, API/count semantics, opt-in install/uninstall, local build/test guide and privacy limitations.
-- Contribution process, respectful participation expectations, sanitized issue forms and PR template.
-- Repository-local DevKit engines, explicit coverage rules, reviewed narrow baseline, zero-warning lint, shell and skipped-test gates, type checking including tests, behavioral tests and secret scanning.
-- Read-only CI, pinned Actions and no persisted checkout credential or deployment permission. Monthly bounded dependency update proposals; no auto-merge.
-- Unreleased changelog, current-source support policy and best-effort maintenance expectations.
+- Trace each source/tooling entrypoint to a supported service, client, operator, test or quality-check workflow. Remove obsolete implementations, dependencies, configuration, comments, examples and active instructions. Keep the immutable D1 SQL migration that the running database requires.
+- Inspect the tracked inventory and staged diff. Keep caches, logs, hook backups, local paths, deployment configuration and credentials out of source. Secret scanning cannot identify every private value; review fixtures and history as well.
+- Reconcile the README, install guide, hook/API reference, privacy, support, security policy and changelog with the exact candidate. Check local links and heading anchors. Run installation in a disposable project, including a path with spaces. Describe the expected result and distinguish configuration from successful reporting.
+- Keep the local-hook installation and directory-plugin story separate. A future listed package must not depend on bundled lifecycle hooks under the current [OpenAI submission rules](https://developers.openai.com/plugins/deploy/submission). Directory approval and compatibility are separate work; do not imply they exist.
 
-## Before publication or ingestion
+## Verify the candidate
 
-1. Verify the exact candidate's required CI and current dependency audit. Resolve applicable high/critical vulnerabilities; document any remaining findings with affected versions, reachability and review trigger. Do not use a blanket audit suppression.
-2. Confirm repository privacy remains private until explicit publication approval. Publish only the sanitized private release repository, keeping the original repository with historical pull-request references private. Use the owner's GitHub noreply author address for new commits. Review commit history for secrets/private fixtures; scanning cannot identify every sensitive value. Do not rewrite history merely to hide a finding; rotate any actual exposed secret.
-3. At authorized publication, enable and verify private vulnerability reporting, Dependabot alerts/security updates, secret scanning/push protection and available code scanning without purchasing upgrades. Private vulnerability reporting is enabled on the public release repository; it was unavailable during private preparation.
-4. Confirm an accessible private community/security contact before inviting contributors. Keep support expectations modest. Review account MFA and access permissions; no account-settings change is performed by this source preparation.
-5. Test the published install links and actual intended client surface. Code-source availability is not hosted service availability; avoid automatic ChatGPT-wide capture claims.
-6. Complete the separate hosted access, logging/backups, deletion scheduling, resource/spend and shutdown gates in [launch](launch.md) before enabling reports. Choose a version/tag and preserve the exact tested source/archive identity.
-7. Publish only the approved announcement and bounded invitations. No badges implying certification, unsupported popularity/performance claims, package registry publication or paid services are part of this preparation.
+Run the [documented local checks](verification.md), both dependency audits and required hosted CI/CodeQL. Resolve concrete security/privacy defects before release. Advisory exceptions must be exact, justified, reviewed and unexpired; the current register is empty. Do not suppress new findings or broaden baselines to make a release pass.
 
-## References
+Lint, formatting, duplication, unused-code checks and tests are evidence of their respective scope. They do not prove usefulness, absence of every defect or end-to-end anonymity. Keep license/provenance notices accurate for both the development and hook dependency trees. No certification badge or unsupported performance claim is warranted.
 
-- [GitHub repository best practices](https://docs.github.com/en/repositories/creating-and-managing-repositories/best-practices-for-repositories)
-- [GitHub Actions secure use](https://docs.github.com/en/actions/reference/security/secure-use)
-- [Private vulnerability reporting](https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/configure-vulnerability-reporting/configure-for-a-repository)
-- [OpenSSF OSPS baseline 2026.02.19](https://baseline.openssf.org/versions/2026-02-19)
+## Publish a reviewed release
 
-## Dependency review — 2026-10-07
+1. Obtain maintainer authorization for the candidate and intended external actions. Merging source, creating a release, deploying the service, submitting a plugin and sending announcements are distinct actions.
+2. Update the changelog and installation tag together in the candidate, then merge the green candidate and record its full commit SHA. Tag the exact reviewed commit and verify that tag resolves to it before creating the prerelease. Preserve existing published tags; corrections get a new version.
+3. Write release notes explaining what changed for users, whether an installed hook needs updating/review, and whether the hosted service changed. Link to the current readable install guide and the version-pinned source. A documentation-only update need not deploy the Worker.
+4. If deployment is approved, follow [hosting](hosting.md): deploy a clean tagged checkout, preserve the existing endpoint/database/reporting flags/epoch during maintenance unless a change is explicitly approved, record the Worker version, run bounded read checks and log out. Never assume a failed command implies nothing happened; inspect active state before retrying.
+5. Confirm public links, issue/support routes and private security reporting work before inviting users. Keep account access protected and use available free repository security features; no paid upgrades or account-setting changes are implied by this checklist.
 
-Compatible updates replace the originally vulnerable Next.js/React server-component and build-tool versions. A scoped Satori override moves fflate from 0.7.3 to the patched 0.7.5; the existing Miniflare sharp override moves to 0.35.5. The locked installation and application build must pass after updates.
+The source on `main` may be newer than the deployed tag. Keep dated hosted evidence and release notes explicit about that difference. Do not describe local or synthetic checks as a real-outage success story.
 
-Two underlying advisories remain, with exact package versions and paths recorded in `rules/dependency-audit-exceptions.json`, expiring on 2026-11-06. Their dependent packages also appear in raw npm audit totals; that does not represent additional independent flaws. The networked CI gate fails unknown advisories, changed package paths/versions, expired exceptions and audit unavailability. This is a reviewed audit, not a zero-vulnerability claim.
+## Communicate once, then evaluate
 
-- [braces stack exhaustion](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm): upstream lists no patched version. The affected 3.0.3 package is used by build/lint glob tooling with repository-controlled patterns. It is not in the generated Worker bundle and report input does not reach it. An untrusted contribution could still disrupt its own CI run; CI has no persisted Git credential or deployment secret and has a 10-minute limit. Revisit on upstream patch or changed input/runtime usage.
-- [nested esbuild development-server exposure](https://github.com/advisories/GHSA-67mh-4wv8-2f99): Drizzle's legacy configuration loader pins esbuild 0.18.20. Its use is transformation, not the affected serve API; it is not in the Worker bundle. Do not expose a development server from that nested dependency. Revisit on Drizzle/helper upgrades or any serving use.
+Use the [distribution plan](launch.md) for a brief invitation and bounded pilot feedback. No automated outreach, recurring promotion or ongoing agent monitoring is installed. Maintainer support and review remain best effort.
 
-No `npm audit fix --force`, forced downgrade or peer-dependency bypass is used. These scoped exceptions remain documented for the pilot; recheck them and the full advisory inventory at public release.
+## Basis
 
-## Standalone source cleanup — 2026-10-08
-
-The Sites/framework prototype and legacy routing adapter have been removed from current source, along with their build dependencies and private project metadata. The project now builds only the direct Cloudflare Worker. Handwritten source has no broad lint/format exclusions; the architecture baseline is empty. Required Knip checks cover unused files/exports/dependencies. Historical dependency discussion above describes the old lockfile; current advisory results are authoritative. Removed Drizzle tooling also removes its nested-esbuild advisory exception.
+- [Diátaxis: task-focused how-to guides](https://www.diataxis.fr/how-to-guides/)
+- [Google: procedures and expected results](https://developers.google.com/style/procedures)
+- [GitHub: releases and tags](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases)
+- [GitHub: contributor guidelines](https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/setting-guidelines-for-repository-contributors)
+- [OpenSSF: project security baseline](https://baseline.openssf.org/versions/2026-08-28)
+- [Open Source Guides: maintainer expectations](https://opensource.guide/best-practices/)

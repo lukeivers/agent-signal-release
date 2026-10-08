@@ -4,7 +4,7 @@ title: '[Bug]: '
 body:
   - type: markdown
     attributes:
-      value: 'For vulnerabilities use SECURITY.md. Do not include private logs, tool output, commands, headers, bearer capabilities, repository names, or state files.'
+      value: 'For vulnerabilities use SECURITY.md. Do not include private logs, tool output, private command arguments, headers, bearer capabilities, repository names, or state files.'
   - type: textarea
     id: behavior
     attributes:
@@ -22,4 +22,4 @@ body:
   - type: input
     id: version
     attributes:
-      label: Commit or version, OS and Node version
+      label: Agent Signal release/commit, OS, Node and Codex versions

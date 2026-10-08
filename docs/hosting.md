@@ -10,7 +10,9 @@ Deployment requires a clean checkout at an exact version tag. Ignored `.cloudfla
 
 The public deployment needs no application hosting secret. Closed synthetic rehearsal may use a temporary `PRIVATE_ACCESS_TOKEN`; it is not a reporter capability and must never enter source, client configuration, command arguments or logs. Logout after authorized hosted work. Never activate paid hosting automatically.
 
-## Open and stop
+## Maintenance, open and stop
+
+For a maintenance release, use `deploy`; it preserves the existing public/reporting flags and epoch. Do not use `pilot-open` to perform an ordinary update.
 
 After explicit authorization, `node scripts/cloudflare.mjs pilot-open --approved` opens public reporting and starts a fresh count epoch. `pilot-stop` disables report/check operations while keeping the endpoint and cleanup schedule. Both require deployment access. Epoch resets omit earlier observations; counts rebuild over ten minutes and zero does not establish health. Existing capabilities/sequences remain usable, and unseen failure histories receive no recovery credit.
 

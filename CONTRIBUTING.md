@@ -1,29 +1,32 @@
 # Contributing
 
-Agent Signal is an early, single-maintainer experiment. Luke Ivers maintains it; review and support are best effort, with no response-time or uptime commitment. Small, focused changes are easier to review. Discuss new services, capture surfaces, data collection or hosting changes before implementing them. Issues and pull requests become the discussion channels when the repository is public.
+Small, focused fixes and clear installation feedback are welcome. Luke Ivers maintains this early experiment with best-effort review; see [support expectations](SUPPORT.md) and [community expectations](CODE_OF_CONDUCT.md). Discuss new services, capture surfaces, data collection or hosting changes in an issue before implementing them.
 
-## Set up and verify
+## Set up locally
 
-Use Node 22.13 or newer, Python 3.10+, and Git. No global DevKit installation is needed.
+Use Node.js 22.13 or newer, Python 3.10 or newer, and Git. From a checkout of the repository:
 
 ```sh
 npm ci
+npm ci --prefix clients/codex --ignore-scripts
 npm run verify
-npm run build
+npm run test:worker
 ```
 
-The verification command checks formatting, token-shape duplication, dependency boundaries and cycles, named ownership, privacy logging, ESLint with zero warnings, shell scripts, TypeScript (including tests), unregistered skipped tests and behavioral tests. See [quality rules](docs/quality.md) for scope and limitations. CI also scans Git history for secrets and runs `npm run audit:dependencies` against current advisories. The advisory check needs network access; documented exceptions expire and cannot hide unrelated findings. Follow [local Worker verification](docs/verification.md) for the HTTP/D1 integration scenario. Never run synthetic reports against a public service.
+The first installation is for development tooling; the second is for the independently locked hook client. No global DevKit installation, Cloudflare account or production credential is needed. The Worker smoke uses disposable local D1 state and fabricated reports. See [verification](docs/verification.md) for expected results and [quality checks](docs/quality.md) for coverage.
 
 ## Submit a change
 
-Use a branch and a pull request. Explain the user-visible outcome, relevant checks and remaining limitations. Add regression coverage for meaningful behavioral changes; prose-only edits do not need invented tests. Preserve the disabled ingestion default, fail-open hook, explicit installation consent and launch boundaries. Do not add raw diagnostics, repository URLs, session IDs, account identifiers or telemetry to the reporting service.
+Use a branch and pull request. Explain the problem, resulting behavior, relevant evidence and limitations. Add regression coverage for meaningful behavioral changes; prose-only edits need no invented tests. Verify documented commands and links when changing setup instructions. CI also checks current dependency advisories and scans history for secrets.
 
-Use synthetic examples in issues and tests. A sanitized error category, version, platform and minimal reproduction are enough to start. Do not paste commands, tool transcripts, headers, bearer capabilities, private repository names or state files. Follow [SECURITY.md](SECURITY.md) for vulnerabilities. AI-assisted contributions receive the same review and evidence requirements as other contributions.
+Preserve the disabled-by-default source configuration, quiet observer failure, explicit reporting consent and hook trust. Keep reports limited to the existing allowlist. Do not add raw diagnostics, repository URLs, session/account identifiers or telemetry to the service. Use synthetic inputs in issues and tests; follow [security reporting](SECURITY.md) for vulnerabilities.
 
-Contribute only material you are authorized to share, under the project's MIT license, preserving third-party notices. No CLA, mandatory account enrollment or contribution volume is required. Maintainer review decides acceptance; passing CI does not authorize deployment or publication.
+Contribute only material you are authorized to share under the MIT license, retaining applicable third-party notices. AI-assisted contributions need the same review and evidence as other contributions. No CLA or contribution quota is required. Maintainer review decides acceptance; passing CI does not authorize deployment, directory submission or outreach.
 
-## Removing and replacing subsystems
+## Remove what a change retires
 
-Unused scaffolding, dependencies and configuration must be removed in the same change that retires a subsystem. A retained integration needs a current requirement and explicit owner agreement; speculative future use is not a reason to retain it. Trace runtime code, build/dependency tooling, environment/configuration, credentials, docs and tests. Preserve immutable migrations and dated evidence where they serve a current purpose.
+Remove obsolete code, dependencies, configuration, tests, comments and active instructions in the same change that replaces a subsystem. Retained compatibility needs a current requirement and explicit maintainer agreement. Preserve immutable migrations that the running database needs; Git history already retains removed drafts and prototypes.
 
-`npm run unused` uses pinned Knip to check unused files, exports, dependencies and unresolved imports. It is part of local/CI verification. Entrypoints in `knip.json` are actual Worker, operator/installer/test commands and client surfaces; do not use broad source globs as entrypoints to hide leftovers. Vendored DevKit tools are separately integrity-checked. A new exception must be narrow, reasoned and reviewed. The portable core scan also rejects removed framework/package imports and starter directories. Public release readiness requires these checks; do not postpone cleanup until after publication.
+Pinned Knip checks unused files, exports, dependencies and unresolved imports in `npm run verify`. Its entrypoints must correspond to real service, client, operator, test or quality-check workflows. Do not make every source file an entrypoint or hide findings with broad exclusions. New exceptions need a narrow reason and review. Source checks also reject retired framework packages/directories and tracked runtime caches/logs.
+
+Before publishing changes, use the [release checklist](docs/open-source-readiness.md) to reconcile installation, privacy, support, API, version and service claims.
