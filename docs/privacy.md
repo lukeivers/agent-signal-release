@@ -16,7 +16,7 @@ These protections apply to the application. They cannot remove private informati
 
 The hook sees tool output in memory. Its private state directory stores a hash of the session ID for filenames, a random rotating token, sequence/cooldown data and keyed hashes of destinations used to match recovery. It does not save original session/repository identifiers or output. Directories must be private (0700); files are created with 0600 permissions. Local state files are not uploaded; the token and sequence are included in reports.
 
-The hook uses the same token during a local session and rotates it after 22 hours of use. Local state remains sensitive and can include temporary files from interrupted writes. Stop every hook using it before deleting the directory; see the [hook reference](codex-hook.md#request-timing-and-local-state). Local deletion does not erase previously submitted service records.
+The hook reuses the session token until the next matching event at least 22 hours after its creation, when it rotates the token. Local state remains sensitive and can include temporary files from interrupted writes. Stop every hook using it before deleting the directory; see the [hook reference](codex-hook.md#request-timing-and-local-state). Local deletion does not erase previously submitted service records.
 
 ## Counts and retention
 
