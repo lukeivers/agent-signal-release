@@ -2,7 +2,7 @@
 
 ## Boundary
 
-Current authorization covers private GitHub source/CI, owner-private Sites synthetic deployment, and direct Cloudflare Free hosting, guarded synthetic testing and private source release preparation. Public source/service access, real reporting, social posts, outreach, directory submissions and paid activation remain separately authorized actions.
+The public source and direct Cloudflare Free pilot launched with owner approval on 2026-10-08. Public access and opt-in reporting are live. Social posts, outreach, directory submissions and paid activation still require separate authorization. Earlier gates below describe launch preparation and remain relevant to future releases.
 
 Before public source publication, complete [open-source release preparation](open-source-readiness.md).
 

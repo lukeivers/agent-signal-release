@@ -1,4 +1,6 @@
-import { readFile, writeFile, mkdir, lstat } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, lstat, rename, rm } from 'node:fs/promises';
+import { createRequire } from 'node:module';
+import { randomUUID } from 'node:crypto';
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -18,6 +20,13 @@ export async function install(project, endpoint = PILOT_ENDPOINT, localTest = fa
     url.hash
   )
     throw new Error('Expected a root HTTPS endpoint (loopback requires explicit local test mode)');
+  try {
+    createRequire(import.meta.url).resolve('proper-lockfile');
+  } catch {
+    throw new Error(
+      'Install hook dependencies with npm ci --prefix clients/codex --ignore-scripts first',
+    );
+  }
   const root = resolve(project);
   if (!(await lstat(root)).isDirectory()) throw new Error('Project directory must exist');
   const directory = join(root, '.codex');
@@ -46,7 +55,7 @@ export async function install(project, endpoint = PILOT_ENDPOINT, localTest = fa
   const hooks = config.hooks ?? {};
   const entries = hooks.PostToolUse ?? [];
   if (!Array.isArray(entries)) throw new Error('Invalid existing PostToolUse hooks');
-  const command = `${local ? 'AGENT_SIGNAL_ALLOW_LOOPBACK=1 ' : ''}AGENT_SIGNAL_ENDPOINT=${quote(url.origin)} ${quote(process.execPath)} ${quote(script)}`;
+  const command = `${local ? 'AGENT_SIGNAL_ALLOW_LOOPBACK=1 ' : ''}AGENT_SIGNAL_ENDPOINT=${quote(url.origin)} sh -c ${quote(`if [ -x ${quote(process.execPath)} ] && [ -r ${quote(script)} ]; then exec ${quote(process.execPath)} ${quote(script)}; fi`)}`;
   if (entries.some((entry) => entry?.hooks?.some((hook) => hook?.command === command)))
     return { file, changed: false, command };
   if (
@@ -70,8 +79,23 @@ export async function install(project, endpoint = PILOT_ENDPOINT, localTest = fa
       ],
     },
   };
-  if (original !== undefined)
-    await writeFile(`${file}.agent-signal-backup`, original, { mode: 0o600, flag: 'wx' });
-  await writeFile(file, JSON.stringify(next, null, 2) + '\n', { mode: 0o600 });
+  if (original !== undefined) {
+    try {
+      await writeFile(`${file}.agent-signal-backup`, original, { mode: 0o600, flag: 'wx' });
+    } catch (error) {
+      if (error.code !== 'EEXIST') throw error;
+      await writeFile(`${file}.agent-signal-backup-${randomUUID()}`, original, {
+        mode: 0o600,
+        flag: 'wx',
+      });
+    }
+  }
+  const temporary = `${file}.${randomUUID()}.tmp`;
+  try {
+    await writeFile(temporary, JSON.stringify(next, null, 2) + '\n', { mode: 0o600, flag: 'wx' });
+    await rename(temporary, file);
+  } finally {
+    await rm(temporary, { force: true });
+  }
   return { file, changed: true, command };
 }

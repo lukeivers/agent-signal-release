@@ -45,20 +45,21 @@ export class Store {
     const reporterKey = `reporter:${reporter.hash}:${Math.floor(now / 3_600_000)}`;
     const key = this.partition + cohortKey(value.cohort);
     // D1 batch is transactional. changes() gates each subsequent mutation on the
-    // preceding quota write; simultaneous requests cannot bypass either ceiling.
+    // preceding quota write. Check the reporter first so rejected repeat attempts
+    // cannot spend the shared daily budget; simultaneous requests cannot bypass either ceiling.
     const responses = await this.db.batch([
       this.db
         .prepare(
           `INSERT INTO budgets(key,used,expires) VALUES(?,1,?)
         ON CONFLICT(key) DO UPDATE SET used=used+1 WHERE used<? RETURNING used`,
         )
-        .bind(globalKey, now + 2 * 86_400_000, DAILY_LIMIT),
+        .bind(reporterKey, reporter.expires, REPORTER_HOURLY_LIMIT),
       this.db
         .prepare(
           `INSERT INTO budgets(key,used,expires) SELECT ?,1,? WHERE changes()=1
         ON CONFLICT(key) DO UPDATE SET used=used+1 WHERE used<? RETURNING used`,
         )
-        .bind(reporterKey, reporter.expires, REPORTER_HOURLY_LIMIT),
+        .bind(globalKey, now + 2 * 86_400_000, DAILY_LIMIT),
       this.db
         .prepare(
           `INSERT INTO observations(reporter,cohort,sequence,state,observed,expires,had_failure)

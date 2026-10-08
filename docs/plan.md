@@ -1,5 +1,7 @@
 # Converged implementation plan
 
+Historical preparation plan; the public source and direct Cloudflare pilot launched with separate owner approval on 2026-10-08. Social posts, outreach, directory submission and paid hosting remain separately authorized.
+
 Reviewed through two resumed adversarial rounds with GPT-6 Astra at medium effort on 2026-10-07. Further code review follows implementation. Private GitHub and undeployed owner-private Sites preparation are authorized. Deployment of any audience, public GitHub visibility, outreach, social posts, and directory submission remain outside this task.
 
 ## First useful artifact

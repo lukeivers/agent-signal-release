@@ -2,7 +2,7 @@
 
 ## Current launch decision
 
-The owner approved starting the reporting service directly on Cloudflare Workers and D1, staying on Free. The dashboard's Workers plans page confirmed Free as the current plan on 2026-10-07. Public access and reporting remain disabled. The stable address remains unchanged. No domain purchase, paid activation or automatic upgrade is authorized.
+The owner approved starting the reporting service directly on Cloudflare Workers and D1, staying on Free. The dashboard's Workers plans page confirmed Free as the current plan on 2026-10-07. The approved public pilot opened on 2026-10-08; public access and reporting are enabled. The stable address remains unchanged. No domain purchase, paid activation or automatic upgrade is authorized.
 
 Direct mode needs no Sites origin or access credential. The owner-private Sites prototype can remain separate; it is not a reporting dependency. New `prepare` configurations default to `cloudflare` mode. `node scripts/cloudflare.mjs prepare ACCOUNT_ID DATABASE_ID WORKER_NAME` prepares a closed direct deployment, followed by `migrate`, `dry-run`, and guarded deployment verification. Reporter capabilities are never hosting account credentials.
 
@@ -44,3 +44,9 @@ The existing 10,000 validated mutation attempts/day and 12/capability/hour limit
 ## Shutdown
 
 Set `REPORTING_ENABLED=false` in the ignored deployment configuration and deploy the reviewed Worker. Public discovery can remain available; data operations return `unavailable`. Set `PUBLIC_ENABLED=false` with no private token for a completely closed API, then deploy. Cleanup remains scheduled. Do not delete the Worker/subdomain as a first response: that sacrifices the stable client address. Inspect free-plan quotas/account limits separately; an application mutation ceiling does not cap all platform requests.
+
+## Deployment source and emergency fallback
+
+Deployment commands now require a clean checkout at an exact version tag. Unreviewed source cannot be shipped merely to stop reporting. After a deployment, ignored `.cloudflare/deployment-source.json` records the source tag/commit; `.cloudflare/deployed-bundle/` retains the built output. These local records do not independently prove the active provider version.
+
+If CLI access or local state is unavailable, use Cloudflare's dashboard for the existing Worker and disable its workers.dev route. This is an emergency availability stop, not a verified reporting-only switch; verify the public endpoint is inaccessible afterward. Keep the Worker and database so scheduled cleanup can continue. Do not delete the database or activate a paid plan.

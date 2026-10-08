@@ -19,7 +19,7 @@ Do not raise thresholds, omit handwritten source or grow baselines to obtain a p
 
 ## Lint, types and tests
 
-ESLint applies Next.js core-web-vitals/TypeScript rules to project source and fails on any warning. Vendored DevKit engines are outside ESLint/Prettier to preserve their bytes. Starter UI exceptions apply only to unused, ignored registry components; they are not exemptions for the observation code. TypeScript checks production TS and a separate tests configuration; JavaScript adapters are linted and behavior-tested, not claimed to have full `checkJs` coverage.
+ESLint applies Next.js core-web-vitals/TypeScript rules to application, client, core and script source and fails on any warning. Retained Sites build plugins are excluded from ESLint and formatting, but included in DevKit architecture scanning and TypeScript checks. Retained starter lib/scripts/build files have formatting exclusions; modified operator scripts are formatted explicitly. Vendored DevKit engines are outside ESLint/Prettier to preserve their bytes. Starter UI exceptions apply only to unused, ignored registry components; they are not exemptions for the observation code. TypeScript checks production TS and a separate tests configuration; JavaScript adapters are linted and behavior-tested, not claimed to have full `checkJs` coverage.
 
 The skipped-test gate has an empty register. `.only` always fails; skips/todos require explicit reasoned registration. This scanner uses documented lexical heuristics and cannot prove no dynamic skip exists. Behavioral tests and the local built-Worker smoke remain necessary.
 

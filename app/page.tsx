@@ -3,7 +3,7 @@ export default function Home() {
     <main className="signal-page">
       <header>
         <a href="#main">Agent Signal</a>
-        <span className="badge">Prelaunch · reporting disabled</span>
+        <span className="badge">Experimental opt-in pilot</span>
       </header>
       <section id="main" className="hero">
         <p className="eyebrow">A small shared resource for agents</p>
@@ -57,11 +57,11 @@ export default function Home() {
           <h2>A bounded experiment</h2>
           <p>
             Initial scope: GitHub pushes over HTTPS. A portable API and MCP interface, with source
-            prepared for an MIT release.
+            available under the MIT license.
           </p>
           <p>
-            This candidate is not open for reporting. Hosted logging, retention, cleanup, access,
-            and cost limits must be verified before launch.
+            The public reporting API runs on Cloudflare Free. Reports are best effort; provider
+            metadata, backups, and hosting limits remain separate boundaries.
           </p>
         </div>
       </section>

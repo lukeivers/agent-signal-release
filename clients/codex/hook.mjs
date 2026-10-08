@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import { observe, readBoundedToolOutput } from './adapter.mjs';
 try {
+  const { observe, readBoundedToolOutput } = await import('./adapter.mjs');
   const event = JSON.parse(await readBoundedToolOutput(process.stdin, 1_000_000));
   const counts = await observe(event);
   if (counts)

@@ -212,3 +212,66 @@ test('exhausted local budget rejects REST and MCP mutations without changing sto
     db.raw.close();
   }
 });
+
+test('a saturated reporter cannot keep spending the shared daily budget', async () => {
+  const { db, store, a } = await reportFixture();
+  for (let sequence = 1; sequence <= 12; sequence++)
+    await store.report({ cohort: sample, sequence, state: 'failure' }, a, now);
+  for (let sequence = 13; sequence <= 20; sequence++)
+    await assert.rejects(
+      store.report({ cohort: sample, sequence, state: 'failure' }, a, now),
+      /rate_limited/,
+    );
+  assert.equal(
+    db.raw.prepare("SELECT used FROM budgets WHERE key LIKE 'global:%'").get()?.used,
+    12,
+  );
+});
+
+test('MCP negotiates supported versions and describes read and mutation tools accurately', async () => {
+  for (const version of ['2025-03-26', '2025-06-18', '2025-11-25']) {
+    const response = await handle(
+      req('/mcp', {
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: { protocolVersion: version },
+      }),
+      {},
+      now + 180_000,
+    );
+    const body = (await response.json()) as { result: { protocolVersion: string } };
+    assert.equal(body.result.protocolVersion, version);
+    const ping = req('/mcp', { jsonrpc: '2.0', id: 2, method: 'ping' });
+    ping.headers.set('MCP-Protocol-Version', version);
+    assert.equal((await handle(ping, {}, now + 180_000)).status, 200);
+  }
+  const response = await handle(
+    req('/mcp', { jsonrpc: '2.0', id: 3, method: 'tools/list' }),
+    {},
+    now + 180_000,
+  );
+  const body = (await response.json()) as {
+    result: {
+      tools: { name: string; annotations: { readOnlyHint: boolean }; description: string }[];
+    };
+  };
+  assert.equal(body.result.tools[0].annotations.readOnlyHint, true);
+  assert.equal(body.result.tools[1].annotations.readOnlyHint, false);
+  assert.match(body.result.tools[1].description, /observed/);
+});
+
+test('admission is isolate-scoped across fresh environment objects and MCP errors stay protocol-shaped', async () => {
+  const time = now + 600_000;
+  for (let n = 0; n < 120; n++) await handle(req('/api/v1/check', {}), {}, time);
+  const response = await handle(req('/mcp', { jsonrpc: '2.0', id: 1, method: 'ping' }), {}, time);
+  assert.equal(response.status, 429);
+  const body = (await response.json()) as { jsonrpc: string; error: { code: number } };
+  assert.equal(body.jsonrpc, '2.0');
+  assert.equal(body.error.code, -32603);
+  assert.equal(
+    (await handle(req('/mcp', { jsonrpc: '2.0', id: 1, method: 'ping' }), {}, time + 60_000))
+      .status,
+    200,
+  );
+});

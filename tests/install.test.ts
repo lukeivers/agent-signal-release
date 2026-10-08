@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile, writeFile, mkdir, rm, symlink } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { install, PILOT_ENDPOINT } from '../clients/codex/install.mjs';
@@ -76,3 +77,81 @@ test('pilot switches preserve hosting identifiers, start a fresh count window an
     /direct/,
   );
 });
+
+async function temporaryProject(check: (root: string) => Promise<void>) {
+  const root = await mkdtemp(join(tmpdir(), "signal quote's "));
+  try {
+    await check(root);
+  } finally {
+    await rm(root, { recursive: true });
+  }
+}
+const runNode = (args: string[], root?: string) =>
+  spawnSync(process.execPath, args, { cwd: root, input: '{}', encoding: 'utf8' });
+function assertQuiet(result: ReturnType<typeof spawnSync>) {
+  assert.equal(result.status, 0);
+  assert.equal(result.stdout, '');
+  assert.equal(result.stderr, '');
+}
+
+test('a missing adapter dependency is quiet and harmless at hook startup', () =>
+  temporaryProject(async (root) => {
+    const hook = join(root, 'hook.mjs');
+    await writeFile(hook, await readFile(new URL('../clients/codex/hook.mjs', import.meta.url)));
+    assertQuiet(runNode([hook]));
+  }));
+
+test('installation keeps an existing backup and atomically replaces restored configuration', () =>
+  temporaryProject(async (root) => {
+    await mkdir(join(root, '.codex'));
+    const file = join(root, '.codex/hooks.json');
+    await writeFile(file, '{"hooks":{}}');
+    await writeFile(file + '.agent-signal-backup', 'original backup');
+    await install(root);
+    assert.equal(await readFile(file + '.agent-signal-backup', 'utf8'), 'original backup');
+    assert.equal(JSON.parse(await readFile(file, 'utf8')).hooks.PostToolUse.length, 1);
+  }));
+
+test('generated command works and quietly skips a removed Node executable', () =>
+  temporaryProject(async (root) => {
+    const installed = await install(root);
+    const run = (command: string) =>
+      spawnSync('sh', ['-c', command], { input: '{}', encoding: 'utf8' });
+    assertQuiet(run(installed.command));
+    assertQuiet(run(installed.command.replaceAll(process.execPath, '/missing-agent-signal-node')));
+  }));
+
+test('installer rejects absent client dependencies before creating hook configuration', () =>
+  temporaryProject(async (root) => {
+    await writeFile(
+      join(root, 'install.mjs'),
+      await readFile(new URL('../clients/codex/install.mjs', import.meta.url)),
+    );
+    const child = runNode(
+      ['--input-type=module', '-e', 'import {install} from "./install.mjs"; await install(".");'],
+      root,
+    );
+    assert.notEqual(child.status, 0);
+    assert.match(child.stderr, /Install hook dependencies/);
+    await assert.rejects(readFile(join(root, '.codex/hooks.json')), { code: 'ENOENT' });
+  }));
+
+test('deployment guard rejects dirty or untagged source and accepts a clean version tag', () =>
+  temporaryProject(async (root) => {
+    const { requireReleaseSource } = await import('../scripts/cloudflare.mjs');
+    const git = (...args: string[]) => {
+      const child = spawnSync('git', args, { cwd: root, encoding: 'utf8' });
+      assert.equal(child.status, 0, child.stderr);
+    };
+    git('init');
+    git('config', 'user.name', 'Synthetic');
+    git('config', 'user.email', 'synthetic@example.test');
+    await writeFile(join(root, 'source.txt'), 'reviewed');
+    git('add', '.');
+    git('commit', '-m', 'synthetic fixture');
+    assert.throws(() => requireReleaseSource(root), /tagged/);
+    git('tag', 'v0.1.0-pilot.2');
+    assert.equal(requireReleaseSource(root).tag, 'v0.1.0-pilot.2');
+    await writeFile(join(root, 'source.txt'), 'unreviewed');
+    assert.throws(() => requireReleaseSource(root), /clean/);
+  }));

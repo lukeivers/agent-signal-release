@@ -94,10 +94,28 @@ function execute(args) {
   if (child.status !== 0)
     throw new Error('Cloudflare command failed; inspect deployment state before retrying');
 }
+export function requireReleaseSource(directory = root) {
+  const readGit = (args) => {
+    const reply = spawnSync('git', args, { cwd: directory, encoding: 'utf8' });
+    if (reply.status !== 0)
+      throw new Error('Deployment requires a clean, exactly tagged release checkout');
+    return reply.stdout.trim();
+  };
+  const tag = readGit(['describe', '--exact-match', '--tags', 'HEAD']);
+  if (!/^v\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$/.test(tag) || readGit(['status', '--porcelain']))
+    throw new Error('Deployment requires a clean, exactly tagged release checkout');
+  return { tag, commit: readGit(['rev-parse', 'HEAD']) };
+}
 function deployCandidate(next) {
+  const source = requireReleaseSource();
   const candidate = resolve(directory, 'candidate.json');
   writeFileSync(candidate, JSON.stringify(next, null, 2) + '\n', { mode: 0o600 });
-  execute(['deploy', '--config', candidate]);
+  execute(['deploy', '--config', candidate, '--outdir', resolve(directory, 'deployed-bundle')]);
+  writeFileSync(
+    resolve(directory, 'deployment-source.json'),
+    JSON.stringify({ ...source, recordedAt: new Date().toISOString() }, null, 2) + '\n',
+    { mode: 0o600 },
+  );
   writeFileSync(configPath, JSON.stringify(next, null, 2) + '\n', { mode: 0o600 });
 }
 export async function verifyDeployment(

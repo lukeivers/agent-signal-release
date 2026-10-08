@@ -3,7 +3,8 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Agent Signal',
-  description: 'Recent unverified service-failure observations for agents. Prelaunch candidate.',
+  description:
+    'Recent unverified service-failure observations for agents. Experimental opt-in pilot.',
   other: {
     'codex-preview': 'development',
   },

@@ -18,7 +18,7 @@
 3. Start `node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js dev --config dist/server/wrangler.json --local --persist-to .wrangler/state --ip 127.0.0.1 --port 8799 --inspector-port 0 --var REPORTING_ENABLED:true`.
 4. On a fresh synthetic local database, run `node scripts/local-smoke.mjs`. It assumes the test cohort starts empty. Never point this test at hosted production.
 
-The scheduled cleanup function is tested in the core. A hosted cron trigger, provider retention/logging, cross-user access, and platform-wide costs remain launch gates. No production source is active.
+At the prelaunch checkpoint, scheduled cleanup was tested locally. Later hosted synthetic evidence and pilot activation are recorded below; provider retention, costs and real-use utility remain separate limitations.
 
 ## Open-source preparation verification
 
@@ -59,3 +59,15 @@ All 26 behavioral tests, formatting, DevKit duplication/architecture, privacy lo
 ## Publication-day dependency refresh — 2026-10-08
 
 The launch-time audit reported six newly indexed Next.js advisories after the previous candidate's audit passed. Next.js and its lint configuration were patched from 16.3.6 to 16.3.8. The refreshed scoped audit has no new blockers and retains only the two existing documented tooling exceptions; all 26 tests, required quality gates and the build pass. Public source publication occurred before the failed refresh result was handled, but reporting/API activation was held closed during remediation. The portable direct Cloudflare observation core does not import Next.js.
+
+## Public pilot activation — 2026-10-08
+
+The sanitized release repository and `v0.1.0-pilot.1` were published with owner approval, then direct Cloudflare reporting opened with epoch `2026-10-08T11:07:11.552Z`. REST/MCP and the installed production hook completed a hosted synthetic failure/recovery episode. The exact canary records and local state were removed; Wrangler was logged out after verification. The account was observed on Workers Free with no Worker secrets. These are dated observations, not a current account-state guarantee or evidence of real outage usefulness. Earlier sections describe historical prelaunch states.
+
+## Independent-review remediation — 2026-10-08
+
+Three new regressions failed before remediation: quiet hook startup with a missing adapter, exhausted-reporter daily budget isolation, and supported MCP version negotiation. The fixes pass those regressions and tests for absent dependencies/executable, preserved existing backups, dirty/untagged deployment refusal, and isolate admission across fresh environment objects.
+
+All 34 tests and formatting, DevKit duplication/boundary/cycle/ownership checks, raw-logging checks, zero-warning ESLint, ShellCheck, production/test type checks and skipped-test gate pass. Production build and the portable direct-Worker bundle pass. A disposable Miniflare instance loaded that direct bundle and the immutable D1 migration: concurrency, deduplication, recovery/replay, reporter-first budgets and MCP negotiation passed with synthetic local data. No hosted quota or production reports were used. The dependency gate reports no unreviewed findings; the same two scoped tooling exceptions remain, and the isolated client audit reports zero vulnerabilities.
+
+These fixes are source changes pending a new reviewed release and deployment. Existing installations retain the old command until users reinstall and re-trust it. No live service/account settings, paid plan, announcement or directory submission was changed during this remediation. The old tag remains immutable.

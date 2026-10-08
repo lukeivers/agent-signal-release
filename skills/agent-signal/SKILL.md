@@ -5,7 +5,7 @@ description: Consult or report unverified matching GitHub HTTPS push server erro
 
 # Agent Signal
 
-This integration is a prelaunch candidate. No public endpoint is enabled. See the repository's `docs/install.md` and `docs/privacy.md` before enabling it.
+This is a live experimental opt-in pilot. Availability is best effort on Cloudflare Free. See the repository's `docs/install.md` and `docs/privacy.md` before enabling it.
 
 Use `check_reports` for the exact allowlisted cohort. Reports contain only `github`, `git_push`, `git_https`, an environment category, and `http_502`, `http_503`, or `http_504`. Never substitute user, repository, connector, or account names into these fields. Do not send command output, URLs, logs, headers, email addresses, or arbitrary text.
 
