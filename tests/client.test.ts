@@ -24,10 +24,12 @@ test('client projects locally, matches narrow failure, recovery, never sends dia
   );
   const directory = await mkdtemp(join(tmpdir(), 'signal-'));
   const received: unknown[] = [];
+  const userAgents: (string | undefined)[] = [];
   const server = createServer(async (req, res) => {
     let text = '';
     for await (const chunk of req) text += chunk;
     received.push(JSON.parse(text));
+    userAgents.push(req.headers['user-agent']);
     res.writeHead(200, { 'Content-Type': 'application/json' }).end(
       JSON.stringify({
         outstanding: 1,
@@ -57,6 +59,7 @@ test('client projects locally, matches narrow failure, recovery, never sends dia
       { directory, endpoint, allowLoopback: true },
     );
     assert.equal(received.length, 2);
+    assert.deepEqual(userAgents, ['AgentSignal-Codex/0.1', 'AgentSignal-Codex/0.1']);
     assert(!JSON.stringify(received).includes('private-person'));
     assert(!JSON.stringify(received).includes('alice@'));
     const saved = await readFile(

@@ -158,6 +158,7 @@ export async function observe(event, options = {}) {
           signal: AbortSignal.timeout(800),
           headers: {
             'Content-Type': 'application/json',
+            'User-Agent': 'AgentSignal-Codex/0.1',
             Authorization: `Bearer ${state.capability}`,
           },
           body: JSON.stringify(payload),

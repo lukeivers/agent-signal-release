@@ -20,7 +20,7 @@ No Agent Signal account, payment or GitHub token is needed. The hook reads tool 
 Run these commands from a folder where you can keep Agent Signal permanently, outside the project you want to observe:
 
 ```sh
-git clone --branch v0.1.0-pilot.4 --depth 1 https://github.com/lukeivers/agent-signal-release.git
+git clone --branch v0.1.0-pilot.5 --depth 1 https://github.com/lukeivers/agent-signal-release.git
 cd agent-signal-release
 npm ci --prefix clients/codex --ignore-scripts
 ```

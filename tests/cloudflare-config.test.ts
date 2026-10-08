@@ -38,6 +38,7 @@ test('live verification rejects stale or unavailable deployments without writing
     assert.equal(new URL(request.url).pathname, '/api/v1/check');
     assert.equal(request.headers.get('X-Agent-Signal-Private'), 'synthetic-secret');
     assert.equal(request.headers.has('authorization'), false);
+    assert.equal(request.headers.get('User-Agent'), 'AgentSignal-Operator/0.1');
     return new Response(null, {
       status: 503,
       headers: {
