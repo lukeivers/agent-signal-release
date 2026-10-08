@@ -4,18 +4,20 @@ For first-time setup, use [installation](install.md). This page describes the se
 
 ## Installation details
 
-The installer writes `<project>/.codex/hooks.json`. It preserves existing entries and atomically replaces the configuration. If that file already exists, it saves an exact backup beside it as `hooks.json.agent-signal-backup`, or a uniquely suffixed backup if that name is taken. It refuses malformed configurations, symlinked hook files/directories and a second Agent Signal observer. It leaves trust to the user.
+The installer writes `<target>/.codex/hooks.json`: use your home directory as the target for user-wide installation at `~/.codex/hooks.json`, or a project directory for project-only installation. The published pilot.3 installer supports both without a code update. It does not resolve a custom `CODEX_HOME`.
+
+It preserves existing entries and atomically replaces the configuration. If that file already exists, it saves an exact backup beside it as `hooks.json.agent-signal-backup`, or a uniquely suffixed backup if that name is taken. It refuses malformed configurations, symlinked hook files/directories and a second Agent Signal observer in the target file. It leaves trust to the user.
 
 The command pins the current Node executable and the checkout's absolute hook path. It quietly skips observation if either disappears; absent adapter dependencies also produce no hook output. Local paths appear in the hook configuration and backup, so keep them out of commits and issue reports. The installer is the supported configuration method; there is no separate hand-edited example to keep in sync.
 
-Project configuration and hook trust must both permit execution. OpenAI documents [hook inspection and trust through `/hooks`](https://learn.chatgpt.com/docs/hooks). Client versions and managed policies can affect availability. A visible, trusted hook establishes configuration, not network delivery.
+User hooks apply across projects using that user configuration; project hooks also require trusted project configuration. Both require hook trust. Codex loads matching hooks from all sources, so do not enable duplicate Agent Signal entries across user, project, inline or plugin configuration. OpenAI documents [hook inspection and trust through `/hooks`](https://learn.chatgpt.com/docs/hooks). Client versions and managed policies can affect availability. A visible, trusted hook establishes configuration, not network delivery.
 
 ## Update an existing installation
 
-1. Disable the Agent Signal hook in each project's `/hooks` view.
+1. Disable the installed Agent Signal hook(s) in `/hooks`, checking the user or project source as applicable.
 2. Review the desired version's [release notes](https://github.com/lukeivers/agent-signal-release/releases). In the existing Agent Signal checkout, fetch tags, then check out the reviewed tag. Stop if Git reports local changes; preserve them rather than resetting or overwriting them.
 3. Run `npm ci --prefix clients/codex --ignore-scripts` from that checkout.
-4. If the Node executable, checkout location or installed command changed, remove only the old Agent Signal entry from each project's `.codex/hooks.json`, then run the installer from the new location using [step 2 of installation](install.md#2-choose-the-project-and-prepare-its-hook). Otherwise rerunning the installer should report `Already installed`.
+4. If the Node executable, checkout location or installed command changed, remove only the old Agent Signal entry from the user or project hook file, then run the installer from the new location with the same scope using [step 2 of installation](install.md#2-choose-all-projects-or-one-project). Otherwise rerunning the installer should report `Already installed`.
 5. Review and enable the hook in `/hooks` again. Changed hook definitions require fresh trust. The source checkout is live: replacing its files changes what the existing hook executes, even when its command text stays the same.
 
 Do not install a second hook for the same event or manually report an event already observed by the hook.

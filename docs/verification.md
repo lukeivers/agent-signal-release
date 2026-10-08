@@ -25,7 +25,7 @@ The two advisory commands need network access. Success means no unaccepted findi
 
 ## Check installation without polluting public counts
 
-Use the [install guide](install.md) with a disposable local project to check configuration preparation, preservation of existing hooks and paths containing spaces. Inspect the generated configuration and installer output. Do not trust a test hook in an unrelated project or replay fabricated tool events against the public endpoint.
+Use the [install guide](install.md) with a disposable target directory to check configuration preparation, preservation of existing hooks and paths containing spaces. For all-projects setup, substitute a temporary home-directory path for `"$HOME"`; the installer writes the same `.codex/hooks.json` structure without changing your real user hooks. Inspect the generated configuration and installer output. Do not trust a test hook in an unrelated project or replay fabricated tool events against the public endpoint.
 
 Automated installer/client tests cover configuration preservation, duplicate/symlink refusal, atomic writes/backups, missing dependencies/executable, projected requests/state, narrow classification and bounded observer failures. Crash fixtures model stale locks and abandoned temporary files; they are not evidence of actual process termination. A visible, trusted hook is configuration evidence, not proof of successful real-event reporting.
 
