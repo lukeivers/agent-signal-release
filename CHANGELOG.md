@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.0-pilot.6 — 2026-10-10
+
+- Add local Claude Code hooks for matching GitHub HTTPS push failures and recovery, with separate client capabilities and fixed software identification.
+- Share safe configuration editing and lifecycle commands across clients; add Claude Code global/project installation, confirmed uninstall and scoped project-to-user transition.
+- Add Claude Code installation/removal guidance and reconcile supported-client, privacy and release instructions. No backend or hosting change.
+
 ## v0.1.0-pilot.5 — 2026-10-08
 
 - Identify hook and operator HTTP requests with fixed, non-identifying User-Agent headers. Document and verify the Python header workaround for Cloudflare error 1010; retain the free address and provider filtering.

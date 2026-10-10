@@ -4,7 +4,41 @@ import { join, isAbsolute } from 'node:path';
 import { homedir } from 'node:os';
 import lockfile from 'proper-lockfile';
 
-export function classify(event) {
+export function classify(event, client = 'codex') {
+  const successOnly = client === 'claude-code' && event?.hook_event_name === 'PostToolUse';
+  if (client === 'claude-code') {
+    if (event?.hook_event_name === 'PostToolUseFailure') {
+      const failed =
+        typeof event.error === 'string' && /^Exit code (\d+)\n([\s\S]*)$/.exec(event.error);
+      if (
+        event.is_interrupt === true ||
+        !failed ||
+        !Number.isSafeInteger(Number(failed[1])) ||
+        Number(failed[1]) === 0
+      )
+        return null;
+      event = {
+        ...event,
+        hook_event_name: 'PostToolUse',
+        tool_response: { exit_code: Number(failed[1]), output: failed[2] },
+      };
+    } else if (event?.hook_event_name === 'PostToolUse') {
+      const response = event.tool_response;
+      if (
+        !response ||
+        response.interrupted === true ||
+        response.isImage === true ||
+        typeof response.stdout !== 'string' ||
+        typeof response.stderr !== 'string'
+      )
+        return null;
+      // Claude success has no exit code. Keep the existing ref-update evidence requirement.
+      event = {
+        ...event,
+        tool_response: { output: [response.stdout, response.stderr].join('\n') },
+      };
+    } else return null;
+  } else if (client !== 'codex') return null;
   if (event?.hook_event_name !== 'PostToolUse' || event.tool_name !== 'Bash') return null;
   const command = event.tool_input?.command ?? event.tool_input?.cmd;
   // Deliberately narrow. Never execute any text from the event.
@@ -36,12 +70,13 @@ export function classify(event) {
     /^fatal: unable to access ['"](https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/?)['"]:\s*The requested URL returned error: (502|503|504)\s*$/m.exec(
       output,
     );
-  if (failure && (!knownExit || exit !== 0))
+  if (!successOnly && failure && (!knownExit || exit !== 0))
     return { state: 'failure', remote: failure[1].replace(/\/$/, ''), error: `http_${failure[2]}` };
   return null;
 }
 export async function observe(event, options = {}) {
-  const classification = classify(event);
+  const client = options.client ?? 'codex';
+  const classification = classify(event, client);
   if (!classification || typeof event.session_id !== 'string' || event.session_id.length > 200)
     return null;
   const origin = new URL(options.endpoint ?? process.env.AGENT_SIGNAL_ENDPOINT ?? '');
@@ -69,7 +104,9 @@ export async function observe(event, options = {}) {
   const directoryStat = await lstat(directory);
   if (!directoryStat.isDirectory() || directoryStat.isSymbolicLink() || directoryStat.mode & 0o077)
     return null;
-  const name = createHash('sha256').update(event.session_id).digest('hex');
+  const name = createHash('sha256')
+    .update(client === 'codex' ? event.session_id : `claude-code\0${event.session_id}`)
+    .digest('hex');
   const file = join(directory, `${name}.json`);
   let release;
   try {
@@ -158,7 +195,8 @@ export async function observe(event, options = {}) {
           signal: AbortSignal.timeout(800),
           headers: {
             'Content-Type': 'application/json',
-            'User-Agent': 'AgentSignal-Codex/0.1',
+            'User-Agent':
+              client === 'codex' ? 'AgentSignal-Codex/0.1' : 'AgentSignal-ClaudeCode/0.1',
             Authorization: `Bearer ${state.capability}`,
           },
           body: JSON.stringify(payload),

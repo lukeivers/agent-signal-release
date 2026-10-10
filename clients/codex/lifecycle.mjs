@@ -1,7 +1,7 @@
 import { readdir, lstat } from 'node:fs/promises';
 import { join, resolve, isAbsolute } from 'node:path';
 import { readConfig } from './hook-config.mjs';
-import { planInstall } from './install.mjs';
+import { planInstall, hookClient } from './install.mjs';
 
 const quoted = "'(?:[^']|'\\\\'')*'";
 const outer = new RegExp(
@@ -15,7 +15,7 @@ const inner = new RegExp(
 );
 const unquote = (value) => value.slice(1, -1).replaceAll("'\\''", "'");
 
-function generatedHook(hook) {
+function generatedHook(hook, suffix) {
   if (
     !hook ||
     hook.type !== 'command' ||
@@ -31,7 +31,7 @@ function generatedHook(hook) {
     !body ||
     !isAbsolute(unquote(body[1])) ||
     !isAbsolute(unquote(body[2])) ||
-    !unquote(body[2]).endsWith('/clients/codex/hook.mjs')
+    !unquote(body[2]).endsWith(suffix)
   )
     return false;
   try {
@@ -47,38 +47,50 @@ function generatedHook(hook) {
   }
 }
 
-export async function planRemoval(directory) {
-  const snapshot = await readConfig(resolve(directory));
+export async function planRemoval(directory, client = 'codex', filename) {
+  const profile = hookClient(client);
+  const snapshot = await readConfig(resolve(directory), filename ?? profile.userFile);
   const removals = [];
   const unrecognized = [];
-  const entries = snapshot.config.hooks?.PostToolUse ?? [];
-  const remaining = entries.flatMap((entry, entryIndex) => {
-    if (!Array.isArray(entry?.hooks)) return [entry];
-    const hooks = entry.hooks.filter((hook, hookIndex) => {
-      if (entry.matcher !== 'Bash' || !generatedHook(hook)) {
-        if (typeof hook?.command === 'string' && hook.command.includes('/clients/codex/hook.mjs'))
-          unrecognized.push({ entryIndex, hookIndex });
-        return true;
-      }
-      removals.push({ entryIndex, hookIndex, hook });
-      return false;
+  const next = { ...snapshot.config, hooks: { ...snapshot.config.hooks } };
+  for (const event of profile.events) {
+    if (snapshot.config.hooks?.[event] === undefined) continue;
+    next.hooks[event] = snapshot.config.hooks[event].flatMap((entry, entryIndex) => {
+      if (!Array.isArray(entry?.hooks)) return [entry];
+      const hooks = entry.hooks.filter((hook, hookIndex) => {
+        if (entry.matcher !== 'Bash' || !generatedHook(hook, profile.suffix)) {
+          if (
+            typeof hook?.command === 'string' &&
+            /\/clients\/(?:codex|claude-code)\/hook\.mjs/.test(hook.command)
+          )
+            unrecognized.push({ event, entryIndex, hookIndex });
+          return true;
+        }
+        removals.push({ event, entryIndex, hookIndex, hook });
+        return false;
+      });
+      return hooks.length ||
+        hooks.length === entry.hooks.length ||
+        Object.keys(entry).some((key) => !['matcher', 'hooks'].includes(key))
+        ? [{ ...entry, hooks }]
+        : [];
     });
-    return hooks.length ||
-      hooks.length === entry.hooks.length ||
-      Object.keys(entry).some((key) => !['matcher', 'hooks'].includes(key))
-      ? [{ ...entry, hooks }]
-      : [];
-  });
-  return {
-    ...snapshot,
-    removals,
-    unrecognized,
-    changed: removals.length > 0,
-    next: { ...snapshot.config, hooks: { ...snapshot.config.hooks, PostToolUse: remaining } },
-  };
+  }
+  return { ...snapshot, removals, unrecognized, changed: removals.length > 0, next };
 }
 
-export async function scanInstallations(roots) {
+export async function removalPlans(directory, client = 'codex') {
+  const profile = hookClient(client);
+  const plans = [];
+  for (const filename of profile.files) {
+    const plan = await planRemoval(directory, client, filename);
+    if (plan.changed || plan.unrecognized.length) plans.push(plan);
+  }
+  return plans;
+}
+
+export async function scanInstallations(roots, client = 'codex') {
+  const profile = hookClient(client);
   const seen = new Set();
   const plans = [];
   async function visit(directory) {
@@ -89,16 +101,18 @@ export async function scanInstallations(roots) {
     if (!stat.isDirectory()) throw new Error('Scan root must be a directory');
     seen.add(directory);
     try {
-      const plan = await planRemoval(join(directory, '.codex'));
-      if (plan.changed || plan.unrecognized.length) plans.push(plan);
+      plans.push(...(await removalPlans(join(directory, profile.directory), client)));
     } catch (error) {
       throw new Error(
-        `Cannot safely inspect ${JSON.stringify(join(directory, '.codex/hooks.json'))}: ${error.message}`,
+        `Cannot safely inspect ${JSON.stringify(join(directory, profile.directory))}: ${error.message}`,
       );
     }
     const children = await readdir(directory, { withFileTypes: true });
     for (const child of children.sort((a, b) => a.name.localeCompare(b.name))) {
-      if (child.isDirectory() && !['.git', 'node_modules', '.codex'].includes(child.name))
+      if (
+        child.isDirectory() &&
+        !['.git', 'node_modules', '.codex', '.claude'].includes(child.name)
+      )
         await visit(join(directory, child.name));
     }
   }
@@ -111,9 +125,11 @@ export async function scanInstallations(roots) {
   return plans;
 }
 
-export async function planTransition(userDirectory, roots) {
-  const global = await planInstall(resolve(userDirectory));
-  const projects = (await scanInstallations(roots)).filter((plan) => plan.file !== global.file);
+export async function planTransition(userDirectory, roots, client = 'codex') {
+  const global = await planInstall(resolve(userDirectory), undefined, false, client);
+  const projects = (await scanInstallations(roots, client)).filter(
+    (plan) => plan.file !== global.file,
+  );
   if (projects.some((plan) => plan.unrecognized.length))
     throw new Error(
       `Transition needs manual review of modified/unrecognized hooks: ${JSON.stringify(projects.filter((plan) => plan.unrecognized.length).map((plan) => plan.file))}. No configuration changed.`,

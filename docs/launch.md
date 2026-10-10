@@ -6,11 +6,11 @@ The source and direct Cloudflare pilot are public. Directory submission, announc
 
 Share one short post with an existing relevant audience. If useful, ask two or three acquaintances with broader reach for one introduction or share. One optional follow-up is enough; no paid acquisition, ongoing campaign or automated messaging is planned.
 
-Link to the [project README](https://github.com/lukeivers/agent-signal-release#readme), which points to the current readable installation guide. Name the actual scope: an opt-in local Codex hook for GitHub HTTPS push server errors. Do not imply directory installation, ChatGPT-wide automatic capture, unique-person counts or confirmed outages.
+Link to the [project README](https://github.com/lukeivers/agent-signal-release#readme), which points to the current readable installation guide. Name the actual scope: an opt-in local Codex or Claude Code hook for GitHub HTTPS push server errors. Do not imply directory installation, ChatGPT-wide automatic capture, unique-person counts or confirmed outages.
 
 Suggested wording, for a person to choose whether to send:
 
-> I built Agent Signal, a free, open-source experiment that helps AI coding agents compare a GitHub push server error with recent matching reports. The current integration is a separately installed local Codex hook. It sends minimal categories rather than code, repository names or command output; counts are unverified and aren't proof of an outage. If you already use Codex for GitHub work, I'd welcome feedback on whether setup is clear and whether it saves unnecessary debugging. Source and setup: https://github.com/lukeivers/agent-signal-release#readme
+> I built Agent Signal, a free, open-source experiment that helps AI coding agents compare a GitHub push server error with recent matching reports. The current integration is a separately installed local Codex or Claude Code hook. It sends minimal categories rather than code, repository names or command output; counts are unverified and aren't proof of an outage. If you already use Codex or Claude Code for GitHub work, I'd welcome feedback on whether setup is clear and whether it saves unnecessary debugging. Source and setup: https://github.com/lukeivers/agent-signal-release#readme
 
 Before sending, verify the linked setup matches the published release. Do not ask testers to create fake reports or deliberately cause failures in the public service. See [privacy](privacy.md) for network metadata and retention limits.
 

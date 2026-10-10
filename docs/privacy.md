@@ -8,7 +8,7 @@ Agent Signal is an opt-in experimental service operated by Luke Ivers on Cloudfl
 
 A report carries fixed categories (`github`, `git_push`, `git_https`, environment and HTTP error), an increasing sequence number and a locally generated random reporter token. REST sends that token in Authorization; manual MCP sends it as a tool argument. It is a pseudonymous bearer capability for reporting, not an account credential.
 
-The hook also sends the fixed HTTP header `User-Agent: AgentSignal-Codex/0.1`. This identifies the software, not a person or installation. Alternative HTTP clients should use a similarly non-identifying header as described in the [API guide](api.md#http-client-identification).
+The hooks send fixed HTTP headers: `User-Agent: AgentSignal-Codex/0.1` or `User-Agent: AgentSignal-ClaudeCode/0.1`. These identify the software, not a person or installation. Alternative HTTP clients should use a similarly non-identifying header as described in the [API guide](api.md#http-client-identification).
 
 Application storage contains a SHA-256 hash of the token, the exact cohort, sequence, failure/recovery state, server timestamps, prior-failure flag and bounded budget counters. The service does not store raw outputs, command text, repository/account identifiers, names, email addresses, IPs or request headers in its application tables. Invalid requests and exceptions receive fixed errors; application code does not log raw requests or diagnostics. Worker observability is configured off.
 
@@ -16,7 +16,7 @@ These protections apply to the application. They cannot remove private informati
 
 ## What stays on your computer
 
-The hook sees tool output in memory. Its private state directory stores a hash of the session ID for filenames, a random rotating token, sequence/cooldown data and keyed hashes of destinations used to match recovery. It does not save original session/repository identifiers or output. Directories must be private (0700); files are created with 0600 permissions. Local state files are not uploaded; the token and sequence are included in reports.
+The hook sees tool output in memory. Its private state directory stores a hash of the session ID for filenames (with a Claude Code namespace for that client), a random rotating token, sequence/cooldown data and keyed hashes of destinations used to match recovery. It does not save original session/repository identifiers or output. Directories must be private (0700); files are created with 0600 permissions. Local state files are not uploaded; the token and sequence are included in reports.
 
 The hook reuses the session token until the next matching event at least 22 hours after its creation, when it rotates the token. Local state remains sensitive and can include temporary files from interrupted writes. Stop every hook using it before deleting the directory; see the [hook reference](codex-hook.md#request-timing-and-local-state). Local deletion does not erase previously submitted service records.
 
@@ -31,6 +31,8 @@ Cloudflare separately documents [D1 Time Travel recovery history](https://develo
 ## Manual MCP reporting
 
 MCP mutation tools accept the token as an argument, so the client/model transcript and tool logs may retain it. Consent to that exposure before reporting manually. Generate a fresh random token with `node clients/codex/new-capability.mjs /absolute/private/token-file`; the file is created exclusively with private permissions and the token is not printed. Rotate within 22 hours and restart sequences on rotation. Let an agent read the file only after consent; do not derive tokens from identity or reuse them across users. Prefer the local REST hook if transcript exposure is unacceptable.
+
+Codex and Claude Code use separate capabilities even when their session IDs coincide; reports from both do not establish independent people.
 
 Connecting MCP does not install a hook or enable automatic observation. Do not manually report the same event already handled by the hook.
 

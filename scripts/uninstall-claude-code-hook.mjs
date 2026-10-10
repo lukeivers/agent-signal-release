@@ -1,2 +1,2 @@
 import { runUninstall } from './hook-lifecycle.mjs';
-await runUninstall('codex');
+await runUninstall('claude-code');

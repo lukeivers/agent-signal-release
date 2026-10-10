@@ -1,2 +1,2 @@
 import { runInstall } from './hook-lifecycle.mjs';
-await runInstall('codex');
+await runInstall('claude-code');
