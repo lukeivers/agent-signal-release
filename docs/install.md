@@ -1,8 +1,10 @@
 # Install Agent Signal for local Codex
 
+**Using Claude Code? Follow the [Claude Code install and uninstall guide](claude-code.md).**
+
 After setup, Codex can automatically share a minimal report when a supported GitHub HTTPS push fails with HTTP 502, 503 or 504, then see how many other matching reports are outstanding. Successful matching pushes can report recovery.
 
-This is an early, opt-in pilot. It works through a **local Codex hook**, installed once for all your local projects or only for a specific project. There is no directory-listed plugin yet, and these steps do not enable automatic reporting in ChatGPT web, cloud sessions, Claude Code or other agents.
+This is an early, opt-in pilot. It works through a **local Codex hook**, installed once for all your local projects or only for a specific project. There is no directory-listed plugin yet, and these steps do not enable automatic reporting in ChatGPT web, cloud sessions or other agents. Claude Code has its own guide linked above.
 
 ## Before you start
 
@@ -20,7 +22,7 @@ No Agent Signal account, payment or GitHub token is needed. The hook reads tool 
 Run these commands from a folder where you can keep Agent Signal permanently, outside the project you want to observe:
 
 ```sh
-git clone --branch v0.1.0-pilot.5 --depth 1 https://github.com/lukeivers/agent-signal-release.git
+git clone --branch v0.1.0-pilot.6 --depth 1 https://github.com/lukeivers/agent-signal-release.git
 cd agent-signal-release
 npm ci --prefix clients/codex --ignore-scripts
 ```

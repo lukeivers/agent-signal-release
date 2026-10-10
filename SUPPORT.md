@@ -1,8 +1,8 @@
 # Get help
 
-Use [GitHub issues](https://github.com/lukeivers/agent-signal-release/issues) for installation problems, bugs and focused suggestions. First check [installation troubleshooting](docs/install.md#troubleshooting) and [hook limitations](docs/codex-hook.md#recognized-events).
+Use [GitHub issues](https://github.com/lukeivers/agent-signal-release/issues) for installation problems, bugs and focused suggestions. First check [installation troubleshooting](docs/install.md#troubleshooting) and [Codex limitations](docs/codex-hook.md#recognized-events) or the [Claude Code guide](docs/claude-code.md).
 
-Include the Agent Signal release or commit, operating system, Node and Codex versions, the step that failed, and expected versus observed behavior. Use fabricated examples. Do not attach private logs, command arguments/output, repository names, hook configuration, state files, headers or reporting tokens. A description such as “the installer stopped” or “the hook was missing from /hooks” is enough to start.
+Include the Agent Signal release or commit, operating system, Node and Codex/Claude Code versions, the step that failed, and expected versus observed behavior. Use fabricated examples. Do not attach private logs, command arguments/output, repository names, hook configuration, state files, headers or reporting tokens. A description such as “the installer stopped” or “the hook was missing from /hooks” is enough to start.
 
 For security or privacy vulnerabilities, use the [private reporting route](SECURITY.md) instead of a public issue. Do not publish an exploit against the live pilot or fill its counts with test reports.
 

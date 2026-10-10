@@ -2,8 +2,10 @@ import { lstat, readFile, mkdir, writeFile, rename, rm } from 'node:fs/promises'
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 
-export async function readConfig(directory) {
-  const file = join(directory, 'hooks.json');
+export async function readConfig(directory, filename = 'hooks.json') {
+  if (!['hooks.json', 'settings.json', 'settings.local.json'].includes(filename))
+    throw new Error('Invalid hook configuration filename');
+  const file = join(directory, filename);
   let original;
   try {
     const dir = await lstat(directory);
@@ -24,8 +26,9 @@ export async function readConfig(directory) {
       (!config.hooks || typeof config.hooks !== 'object' || Array.isArray(config.hooks)))
   )
     throw new Error('Invalid existing hooks configuration');
-  if (config.hooks?.PostToolUse !== undefined && !Array.isArray(config.hooks.PostToolUse))
-    throw new Error('Invalid existing PostToolUse hooks');
+  for (const event of ['PostToolUse', 'PostToolUseFailure'])
+    if (config.hooks?.[event] !== undefined && !Array.isArray(config.hooks[event]))
+      throw new Error(`Invalid existing ${event} hooks`);
   let backup;
   if (original !== undefined) {
     backup = file + '.agent-signal-backup';
@@ -36,13 +39,15 @@ export async function readConfig(directory) {
       if (error.code !== 'ENOENT') throw error;
     }
   }
-  return { directory, file, original, config, backup };
+  return { directory, filename, file, original, config, backup };
 }
 
 async function unchanged(plan) {
-  const current = await readConfig(plan.directory);
-  if (current.original !== plan.original)
-    throw new Error('Hook configuration changed; preview again');
+  for (const snapshot of [plan, ...(plan.guards ?? [])]) {
+    const current = await readConfig(snapshot.directory, snapshot.filename);
+    if (current.original !== snapshot.original)
+      throw new Error('Hook configuration changed; preview again');
+  }
 }
 
 export async function applyPlans(plans) {

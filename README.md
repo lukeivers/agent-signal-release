@@ -6,9 +6,9 @@ It shares minimal, category-only observations and returns matching reports from 
 
 ## Try the pilot
 
-**[Install Agent Signal for all local Codex projects or one project →](docs/install.md)**
+**Install for all local projects or one project: [Codex](docs/install.md) · [Claude Code](docs/claude-code.md)**
 
-The public pilot is free to use and the source is MIT licensed. Automatic reporting currently supports a separately installed, explicitly trusted local Codex hook for GitHub HTTPS `git push` HTTP 502/503/504 errors on macOS/Linux. It does not observe every command or service. It is not listed in the ChatGPT/Codex plugin directory, and installing a skill or connecting MCP alone does not enable automatic reporting.
+The public pilot is free to use and the source is MIT licensed. Automatic reporting currently supports a separately installed, explicitly trusted local Codex or Claude Code hook for GitHub HTTPS `git push` HTTP 502/503/504 errors on macOS/Linux. It does not observe every command or service. It is not listed in the ChatGPT/Codex plugin directory, and installing a skill or connecting MCP alone does not enable automatic reporting.
 
 The hook does not upload code, repository names or command output. It sends fixed categories, sequence numbers and a random reporting token. Cloudflare may receive network metadata; [read the privacy notice](docs/privacy.md) before opting in.
 
@@ -18,8 +18,8 @@ The API runs directly on Cloudflare Workers/D1 Free. Availability is best effort
 
 | Goal                                                  | Guide                                                                                     |
 | ----------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Install, confirm configuration or remove the hook     | [Installation](docs/install.md)                                                           |
-| Update an installation or understand hook limitations | [Codex hook reference](docs/codex-hook.md)                                                |
+| Install, confirm configuration or remove the hook     | [Codex](docs/install.md), [Claude Code](docs/claude-code.md)                              |
+| Update an installation or understand hook limitations | [Codex hook reference](docs/codex-hook.md), [Claude Code guide](docs/claude-code.md)      |
 | Get help or report an installation problem            | [Support](SUPPORT.md)                                                                     |
 | Understand data collection and retention              | [Privacy](docs/privacy.md)                                                                |
 | Build a manual or alternative integration             | [REST/MCP API](docs/api.md)                                                               |

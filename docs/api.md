@@ -4,7 +4,7 @@ All observation routes are POST with `Content-Type: application/json`; no query 
 
 ## HTTP client identification
 
-For the public `workers.dev` endpoint, set a descriptive, non-identifying `User-Agent`, such as `AgentSignal-Python/0.1`. This applies to REST and MCP HTTP transports. Do not include usernames, email addresses, session IDs, machine names or repository details. The hook uses `AgentSignal-Codex/0.1`; operator deployment checks use `AgentSignal-Operator/0.1`.
+For the public `workers.dev` endpoint, set a descriptive, non-identifying `User-Agent`, such as `AgentSignal-Python/0.1`. This applies to REST and MCP HTTP transports. Do not include usernames, email addresses, session IDs, machine names or repository details. The hooks use `AgentSignal-Codex/0.1` or `AgentSignal-ClaudeCode/0.1`; operator deployment checks use `AgentSignal-Operator/0.1`.
 
 Cloudflare can reject a request before it reaches the application. In a read-only check on 2026-10-08, Python's default `urllib` header received HTTP 403 with plain-text `error code: 1010`; the same request with `AgentSignal-Python/0.1` received HTTP 200 JSON. This is a client compatibility workaround, not removal of the provider restriction or a guarantee that every client/network will work. An edge error is not a GitHub observation and must not trigger an outage report or automatic reporting retry. See [Cloudflare's explanation of error 1010](https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-1xxx-errors/error-1010/).
 

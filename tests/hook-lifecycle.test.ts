@@ -91,29 +91,36 @@ test('transition removes project copies and preserves existing user hooks in a c
     assert.equal((await planTransition(user, [join(root, 'projects')])).length, 0);
   }));
 
-test('uninstall and migration CLIs show exact plans but cannot apply through piped input', () =>
-  temporaryProject(async (root) => {
-    await install(root);
-    const file = join(root, '.codex/hooks.json');
-    const original = await readFile(file, 'utf8');
-    const user = join(root, 'fresh custom home');
-    for (const args of [
-      ['scripts/uninstall-codex-hook.mjs', root],
-      ['scripts/install-codex-hook.mjs', '--user', '--scan', root],
-    ]) {
-      const result = spawnSync(process.execPath, args, {
-        encoding: 'utf8',
-        input: 'APPLY\n',
-        env: { ...process.env, CODEX_HOME: user },
-      });
-      assert.equal(result.status, 0, result.stderr);
-      assert.match(result.stdout, /Remove PostToolUse/);
-      assert(result.stdout.includes(JSON.stringify(file)));
-      assert.match(result.stdout, /Preview only/);
-      assert.equal(await readFile(file, 'utf8'), original);
-      await assert.rejects(readFile(join(user, 'hooks.json')), { code: 'ENOENT' });
-    }
-  }));
+for (const client of ['codex', 'claude-code'])
+  test(`${client} uninstall and migration CLIs show exact plans but cannot apply through piped input`, () =>
+    temporaryProject(async (root) => {
+      await install(root, undefined, false, client);
+      const file = join(
+        root,
+        client === 'codex' ? '.codex/hooks.json' : '.claude/settings.local.json',
+      );
+      const original = await readFile(file, 'utf8');
+      const user = join(root, 'fresh custom home');
+      for (const args of [
+        [`scripts/uninstall-${client}-hook.mjs`, root],
+        [`scripts/install-${client}-hook.mjs`, '--user', '--scan', root],
+      ]) {
+        const result = spawnSync(process.execPath, args, {
+          encoding: 'utf8',
+          input: 'APPLY\n',
+          env: { ...process.env, CODEX_HOME: user, CLAUDE_CONFIG_DIR: user },
+        });
+        assert.equal(result.status, 0, result.stderr);
+        assert.match(result.stdout, /Remove PostToolUse/);
+        assert(result.stdout.includes(JSON.stringify(file)));
+        assert.match(result.stdout, /Preview only/);
+        assert.equal(await readFile(file, 'utf8'), original);
+        await assert.rejects(
+          readFile(join(user, client === 'codex' ? 'hooks.json' : 'settings.json')),
+          { code: 'ENOENT' },
+        );
+      }
+    }));
 
 test('legacy pilot.1 hooks with quoted paths can be removed, modified ones block transition', () =>
   temporaryProject(async (root) => {

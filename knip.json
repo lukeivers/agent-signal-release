@@ -7,6 +7,9 @@
         "scripts/cloudflare.mjs",
         "scripts/install-codex-hook.mjs",
         "scripts/uninstall-codex-hook.mjs",
+        "scripts/install-claude-code-hook.mjs",
+        "scripts/uninstall-claude-code-hook.mjs",
+        "clients/claude-code/hook.mjs",
         "tests/**/*.test.ts"
       ],
       "project": ["**/*.{ts,mjs}"]
