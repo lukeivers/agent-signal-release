@@ -23,15 +23,15 @@
   "devDependencies": {
     "@eslint/js": "9.39.4",
     "@types/node": "22.19.19",
-    "@typescript-eslint/eslint-plugin": "8.59.3",
-    "@typescript-eslint/parser": "8.59.3",
+    "@typescript-eslint/eslint-plugin": "8.72.1",
+    "@typescript-eslint/parser": "8.72.1",
     "eslint": "9.39.4",
     "globals": "14.0.0",
-    "knip": "6.40.0",
+    "knip": "6.43.0",
     "miniflare": "5.20261006.0-alpha",
-    "prettier": "3.9.9",
+    "prettier": "3.9.10",
     "typescript": "5.9.3",
-    "wrangler": "4.148.0"
+    "wrangler": "4.155.0"
   },
   "type": "module",
   "overrides": {
